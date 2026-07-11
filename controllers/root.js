@@ -7,7 +7,7 @@ import {toBeijingTime} from "../utils/datetime-format.js"
 import {ENV} from '../utils/env.js';
 
 export default (fastify, options, done) => {
-    fastify.get('/', {preHandler: validateBasicAuth}, async (request, reply) => {
+    fastify.get('/', async (request, reply) => {
         const indexHtmlPath = path.join(options.rootDir, 'public/index.html');
 
         if (existsSync(indexHtmlPath)) {
