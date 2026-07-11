@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>沫离drpy-node</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f0ede8;
+            padding: 20px 16px 40px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ---- 顶部 Header ---- */
+        .header {
+            background: linear-gradient(135deg, #c8c4bc 0%, #d4cfc6 40%, #e8dcc8 70%, #f0e6d0 100%);
+            border: 2px dashed #999;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .header-left h1 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .header-left .sub {
+            color: #fff;
+            font-size: 14px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+        .header-right {
+            color: #fff;
+            font-size: 13px;
+            text-align: right;
+            line-height: 1.8;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .header-right a {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        /* ---- 分类区块 ---- */
+        .category {
+            background-color: #faf8f5;
+            border: 2px dashed #999;
+            border-radius: 16px;
+            padding: 28px 16px 20px 16px;
+            margin-bottom: 24px;
+            position: relative;
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        .category:nth-child(1) { animation-delay: 0.1s; }
+        .category:nth-child(2) { animation-delay: 0.2s; }
+
+        .category-label {
+            position: absolute;
+            top: -14px;
+            right: 16px;
+            background: #fff;
+            border: 2px solid #888;
+            border-radius: 999px;
+            padding: 4px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            box-shadow: 0 3px 0 #bbb;
+            letter-spacing: 1px;
+        }
+
+        /* ---- 卡片网格 ---- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .card-item {
+            background: #e8e6e3;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            transition: all 0.2s;
+            word-break: break-word;
+            line-height: 1.3;
+        }
+        .card-item:hover {
+            background: #dddad6;
+            transform: translateY(-3px);
+            border-color: #b0b0b0;
+        }
+        .card-item .tag {
+            font-size: 10px;
+            background: rgba(0,0,0,0.08);
+            padding: 0 8px;
+            border-radius: 30px;
+            margin-left: 6px;
+            font-weight: 400;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        /* ---- 友链（底部） ---- */
+        .footer-links {
+            border: 2px dashed #999;
+            border-radius: 16px;
+            padding: 16px;
+            background: #faf8f5;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px 24px;
+            margin-top: 10px;
+        }
+        .footer-links a {
+            color: #8b7355;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px dotted transparent;
+            transition: 0.2s;
+        }
+        .footer-links a:hover {
+            border-bottom-color: #8b7355;
+            color: #5b4335;
+        }
+        .copyright {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 16px;
+            letter-spacing: 1px;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .header-right { text-align: left; }
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 400px) {
+            .card-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ========== 头部 ========== -->
+    <div class="header">
+        <div class="header-left">
+            <h1>
+                <img src="./public/images/moli.png" alt="沫离" style="height:32px; vertical-align:middle; margin-right:8px;">
+                <div class="sub" style="margin-left:0;">沫离drpySui美化版</div>
+            </h1>
+            <div class="sub" style="margin-left:0;">drpyS(drpy-node)</div>
+        </div>
+        <div class="header-right">
+            <div>版本 v1.4.4</div>
+            <div><a href="/apps/admin/">⚙️ 管理面板</a> · <a href="/config/1?healthy=1&pwd=$pwd" target="_blank">📡 配置接口</a> · <a href="/apps/cookie-butler/index.html" target="_blank">🍪cookie管理</a> · <a href="https://gh-proxy.playdreamer.cn/" target="_blank">🛠️道长专用git代理</a></div>
+        </div>
+    </div>
+
+    <!-- ========== 接口配置 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 接口配置</div>
+        <div class="card-grid">
+            <a href="/config/1?sub=moli&healthy=1&pwd=$pwd" class="card-item">沫离精简接口</a>
+            <a href="/index?pwd=$pwd" class="card-item">本地配置接口-静态</a>
+            <a href="/config/1?sub=all&healthy=1&pwd=$pwd" class="card-item">远程订阅接口-全部</a>
+            <a href="/config/1?sub=green&healthy=1&pwd=$pwd" class="card-item">远程订阅接口-绿色</a>
+            <a href="/config/1?sub=tv&healthy=1&pwd=$pwd" class="card-item">电视订阅接口-仅多媒体源</a>
+            <a href="/config/1?sub=pan&healthy=1&pwd=$pwd" class="card-item">电视订阅接口-仅网盘</a>
+            <a href="/config/1?sub=hipy&healthy=1&pwd=$pwd" class="card-item">仅HIPY源</a>
+            <a href="/config?healthy=1&pwd=$pwd" class="card-item">本地配置接口-动态本地</a>
+            <a href="/config/1?healthy=1&pwd=$pwd" class="card-item">本地配置接口-动态外网</a>
+        </div>
+    </div>
+
+    <!-- ========== 常用超链接 ========== -->
+    <div class="category">
+        <div class="category-label">🔗 常用超链接</div>
+        <div class="card-grid">
+            <a href="https://github.com/moli884311/drpy-node" target="_blank" class="card-item">本项目主页</a>
+            <a href="/admin/download" class="card-item">DS本地包下载</a>
+            <a href="docs/apidoc.md" target="_blank" class="card-item">接口文档</a>
+            <a href="docs/apiList.md" target="_blank" class="card-item">接口列表（定时任务）</a>
+            <a href="docs/codeCheck.md" target="_blank" class="card-item">代码质量评估工具</a>
+            <a href="docs/codeCheckReport.md" target="_blank" class="card-item">DS项目代码评估报告</a>
+            <a href="/docs/pyenv.md" target="_blank" class="card-item">Python环境</a>
+            <a href="/docs/envdoc.md" target="_blank" class="card-item">环境变量说明</a>
+            <a href="/docs/catDebug.md" target="_blank" class="card-item">猫源调试教程</a>
+            <a href="/docs/httpTest.md" target="_blank" class="card-item">接口压测教程</a>
+            <a href="https://www.trae.ai/account-setting#subscription" target="_blank" class="card-item">AI编程工具 trae</a>
+            <a href="https://www.bigmodel.cn/glm-coding?ic=DRV3C8M5NX" target="_blank" class="card-item">推荐AI模型-GLM4.7</a>
+            <a href="https://bot.n.cn/" target="_blank" class="card-item">免费AI-360纳米</a>
+            <a href="https://ai.dangbei.com/chat" target="_blank" class="card-item">免费AI-当贝AI</a>
+            <a href="/public/monkey/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%8C%87%E4%BB%A4%E9%9B%86-%E9%81%93%E9%95%BF.json" target="_blank" class="card-item">油猴-自定义指令集</a>
+        </div>
+    </div>
+
+    <!-- ========== 插件应用列表 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 插件应用列表</div>
+        <div class="card-grid">
+            <a href="/apps/admin" class="card-item">Admin 管理面板</a>
+            <a href="/apps/drplayer" class="card-item">DrPlayer</a>
+            <a href="/apps/websocket" class="card-item">Websocket实时日志</a>
+            <a href="/apps/cookie-butler/index.html" class="card-item">Cookie管理插件</a>
+            <a href="/apps/cron-generator/index.html" class="card-item">Cron表达式插件</a>
+            <a href="/apps/clipboard-pusher/index.html" class="card-item">剪切板智能推送</a>
+            <a href="/apps/source-checker/index.html" class="card-item">DS源可用性检测</a>
+            <a href="/apps/vip-parser/index.html" class="card-item">DS解析检测</a>
+            <a href="/apps/source-editor/index.html" class="card-item">DS源配置编辑</a>
+            <a href="/apps/image-manager/index.html" class="card-item">DS内存图片管理器</a>
+            <a href="/apps/clock/white_clock.html" class="card-item">白色时钟</a>
+            <a href="/apps/clock/index.html" class="card-item">日历时钟</a>
+            <a href="/apps/happy/index.html" class="card-item">完结撒花</a>
+            <a href="/apps/book-reader" class="card-item">bookReader</a>
+            <a href="/apps/backup-restore/index.html" class="card-item">系统备份与恢复</a>
+            <a href="/admin/encoder" class="card-item">代码加解密工具</a>
+            <a href="/proxy/%E5%A4%AE%E8%A7%86%E5%A4%A7%E5%85%A8%5B%E5%AE%98%5D/index.html" class="card-item">央视点播解析</a>
+            <a href="/cat/index.html" class="card-item">在线猫ds源主页</a>
+            <a href="/authcoder?len=10&number=1" class="card-item">V我50支付凭证生成器</a>
+        </div>
+    </div>
+
+    <!-- ========== 同作者项目 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 同作者项目</div>
+        <div class="card-grid">
+            <a href="https://github.com/hjdhnx/CatPawOpen/tree/ds-cat" class="card-item">DS源适配猫影视</a>
+            <a href="https://github.com/hjdhnx/drpy-plugin" class="card-item">DS插件项目-golang</a>
+            <a href="https://github.com/hjdhnx/pup-sniffer" class="card-item">DS 二进制插件项目-pup-sniffer</a>
+            <a href="https://github.com/hjdhnx/file-index" class="card-item">DS 二进制插件项目-file-index</a>
+            <a href="https://github.com/hjdhnx/DrPlayer" class="card-item">DS web插件项目-drplayer</a>
+            <a href="https://github.com/hjdhnx/drpy-webpack" class="card-item">drpy2打包项目</a>
+        </div>
+    </div>
+
+    <!-- ========== 免费壳子推荐 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 免费壳子推荐</div>
+        <div class="card-grid">
+            <a href="https://wwbty.lanzouv.com/iGoUV3d3hxuf" class="card-item">酷9</a>
+            <a href="https://wwbty.lanzouv.com/iSSN93d3hyzg" class="card-item">千寻</a>
+            <a href="https://github.com/ingriddaleusag-dotcom/PeekPiliRelease" class="card-item">皮卡丘</a>
+        </div>
+    </div>
+
+    <!-- ========== 点播壳子推荐 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 点播壳子推荐</div>
+        <div class="card-grid">
+            <a href="https://pan.baidu.com/s/1pbGbHIeqvlbXMtsw_rIJQA?pwd=jef2" class="card-item">百度网盘</a>
+            <a href="https://pan.quark.cn/s/fbee14d16842" class="card-item">夸克网盘</a>
+            <a href="https://drive.uc.cn/s/680211bd149d4" class="card-item">uc网盘</a>
+        </div>
+    </div>
+
+    <!-- ========== 参考资料 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 参考资料</div>
+        <div class="card-grid">
+            <a href="docs/crypto-js-wasm/readme-CN.md" class="card-item">crypto-js-wasm使用教程</a>
+            <a href="docs/webdav.md" class="card-item">webdav使用教程</a>
+            <a href="docs/pupInstall.md" class="card-item">puppeteer使用教程</a>
+            <a href="docs/ruleAttr.md" class="card-item">drpyS源属性说明</a>
+            <a href="docs/ruleDesc.md" class="card-item">drpy2写源简述</a>
+            <a href="docs/suanfa.md" class="card-item">关姐算法搭建说明</a>
+            <a href="docs/issue.md" class="card-item">重要问题记录</a>
+            <a href="https://zy.catni.cn/otherShare/drpyS-build.html" class="card-item">多平台安装教程</a>
+        </div>
+    </div>
+
+    <!-- ========== 代理转发功能测试 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 代理转发功能测试</div>
+        <div class="card-grid">
+            <a href="/req/https://github.com/hjdhnx/drpy-node" class="card-item">代理转发ds</a>
+            <a href="/req/https://www.baidu.com" class="card-item">代理转发百度</a>
+            <a href="/req/https://live.fanmingming.com/tv/m3u/ipv6.m3u" class="card-item">代理转发范冰冰直播源</a>
+        </div>
+    </div>
+
+    <!-- ========== AI接入 ========== -->
+    <div class="category">
+        <div class="category-label">🧩 Ai接入</div>
+        <div class="card-grid">
+            <a href="https://console.xfyun.cn/services/bm4" class="card-item">讯飞星火</a>
+            <a href="https://platform.deepseek.com/api_keys" class="card-item">deepseek</a>
+            <a href="https://chat.deepseek.com/" class="card-item">deepseek对话</a>
+            <a href="https://xinghuo.xfyun.cn/botcenter/createbot" class="card-item">讯飞智能体</a>
+            <a href="https://xinghuo.xfyun.cn/botweb/0b83d4b1c0447e82ea00fe9485bd9353" class="card-item">讯飞对话</a>
+            <a href="https://xinghuo.xfyun.cn/botcenter/private-dataset" class="card-item">数据集</a>
+            <a href="https://platform.moonshot.cn/console/info" class="card-item">KIMI</a>
+            <a href="https://kimi.moonshot.cn/" class="card-item">KIMI对话</a>
+        </div>
+    </div>
+
+    <!-- ========== 底部友情链接 ========== -->
+    <div class="footer-links">
+        <a href="https://github.catvod.com/" target="_blank">猫影视git文件加速</a>
+        <a href="https://catvod.com/" target="_blank">猫影视多功能主页</a>
+        <a href="https://zy.catni.cn/editSource/edit-grammar.html" target="_blank">ZY写源教学</a>
+        <a href="https://tvshare.cn/" target="_blank">源动力-新</a>
+        <a href="https://sourcepower.top/index" target="_blank">源动力-老</a>
+        <a href="https://www.arealme.com/brain-memory-game/zh/" target="_blank">电竞专业反应测试</a>
+        <a href="https://wwbty.lanzouv.com/iDZaP3d3i5ud" target="_blank">桌面启动器</a>
+        <a href="http://sspa8.top:8100/pan/admin/index.php" target="_blank">不知名获取网盘CK工具</a>
+    </div>
+    <div class="copyright">
+        © 2026 · 沫离drpy · 仅供学习交流
+    </div>
+
+</div>
+</body>
+</html>

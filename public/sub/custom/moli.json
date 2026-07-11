@@ -1,0 +1,1037 @@
+{
+  "sites": [
+    {
+      "key": "drpy2_豆瓣[官]",
+      "name": "🎬{brand_name}┃豆瓣┃[官]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/public/drpy/drpy2.min.js",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "豆瓣",
+      "lang": "dr2",
+      "ext": "http://8.130.134.173:5705/js/豆瓣[官].js?pwd={api_pwd}"
+    },
+    {
+      "key": "drpyS_腾云驾雾[官]",
+      "name": "☁️{brand_name}┃腾云驾雾┃[官]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/腾云驾雾[官]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "腾云驾雾",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_短剧聚合[沫][短]",
+      "name": "📱{brand_name}┃短剧聚合┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/短剧聚合[沫][短]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "短剧聚合",
+      "author": "EylinSir",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_短剧聚合[短]",
+      "name": "📺{brand_name}┃短剧聚合┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/短剧聚合[短]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "短剧聚合",
+      "author": "EylinSir",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_七味[优]",
+      "name": "🍜{brand_name}┃七味┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/七味[优]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "七味",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_星辰影院[优]",
+      "name": "⭐{brand_name}┃星辰影院┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/星辰影院[优]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "星辰影院",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_永乐视频[优]",
+      "name": "🏮{brand_name}┃永乐视频┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/永乐视频[优]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "永乐视频",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_泥视频[优]",
+      "name": "🎥{brand_name}┃泥视频┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/泥视频[优]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "泥视频",
+      "author": "eylinsir",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_热播影视[优]",
+      "name": "🔥{brand_name}┃热播影视┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/热播影视[优]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "热播影视",
+      "author": "EylinSir",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_独播库[优]",
+      "name": "📚{brand_name}┃独播库┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/独播库[优]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "独播库",
+      "author": "EylinSir",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_粤漫之家[优]",
+      "name": "🎌{brand_name}┃粤漫之家┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/粤漫之家[优]?pwd={api_pwd}",
+      "searchable": 0,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "粤漫之家",
+      "author": "不告诉你",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_荐片[优]",
+      "name": "🎞️{brand_name}┃荐片┃[优]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/荐片[优]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "荐片",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpy2_可可影视[优]",
+      "name": "🍫{brand_name}┃可可影视┃[优]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/public/drpy/drpy2.min.js",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "可可影视",
+      "类型": "影视",
+      "lang": "dr2",
+      "ext": "http://8.130.134.173:5705/js/可可影视[优].js?pwd={api_pwd}"
+    },
+    {
+      "key": "drpyS_多多[盘]",
+      "name": "💾{brand_name}┃多多┃[盘]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/多多[盘]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "多多",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_木偶[盘]",
+      "name": "🪵{brand_name}┃木偶┃[盘]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/木偶[盘]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "木偶",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_欧哥[盘]",
+      "name": "👴{brand_name}┃欧哥┃[盘]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/欧哥[盘]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "欧哥",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_爱看资源[盘]",
+      "name": "👀{brand_name}┃爱看资源┃[盘]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/爱看资源[盘]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "爱看资源",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_至臻[盘]",
+      "name": "💎{brand_name}┃至臻┃[盘]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/至臻[盘]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "至臻",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_动漫豆[漫]",
+      "name": "🎎{brand_name}┃动漫豆┃[漫]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/动漫豆[漫]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "动漫豆",
+      "类型": "动漫",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_樱漫[漫]",
+      "name": "🌸{brand_name}┃樱漫┃[漫]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/樱漫[漫]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "樱漫",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_七猫短剧[短]",
+      "name": "🐱{brand_name}┃七猫短剧┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/七猫短剧[短]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "七猫短剧",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_星芽短剧[短]",
+      "name": "🌱{brand_name}┃星芽短剧┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/星芽短剧[短]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "星芽短剧",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_牛牛短剧[短]",
+      "name": "🐮{brand_name}┃牛牛短剧┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/牛牛短剧[短]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "牛牛短剧",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_西饭短剧[短]",
+      "name": "🍚{brand_name}┃西饭短剧┃[短]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/西饭短剧[短]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "西饭短剧",
+      "类型": "短剧",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_360影视[官]",
+      "name": "🔄{brand_name}┃360影视┃[官]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/360影视[官]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "360影视",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_哔哩影视[官]",
+      "name": "🅱️{brand_name}┃哔哩影视┃[官]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/哔哩影视[官]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "哔哩影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_百忙无果[官]",
+      "name": "🤷{brand_name}┃百忙无果┃[官]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/百忙无果[官]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "百忙无果",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_菜狗[官]",
+      "name": "🐶{brand_name}┃菜狗┃[官]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/菜狗[官]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "菜狗",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_TG盘搜[搜]",
+      "name": "📡{brand_name}┃TG盘搜┃[搜]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/TG盘搜[搜]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 1,
+      "title": "TG盘搜",
+      "author": "EylinSir",
+      "类型": "搜索",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_兄弟盘[搜]",
+      "name": "👬{brand_name}┃兄弟盘┃[搜]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/兄弟盘[搜]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 1,
+      "title": "兄弟盘",
+      "类型": "搜索",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_百度盘[搜]",
+      "name": "🐻{brand_name}┃百度盘┃[搜]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/百度盘[搜]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 1,
+      "title": "百度盘",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_网盘资源[搜]",
+      "name": "🌐{brand_name}┃网盘资源┃[搜]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/网盘资源[搜]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 1,
+      "title": "网盘资源",
+      "类型": "搜索",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "push_agent",
+      "name": "📨{brand_name}┃push_agent┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/push_agent?pwd={api_pwd}",
+      "searchable": 0,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "push_agent",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_兔小贝[儿]",
+      "name": "🐰{brand_name}┃兔小贝┃[儿]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/兔小贝[儿]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "兔小贝",
+      "类型": "影视",
+      "mergeList": 1,
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_枫林影视",
+      "name": "🍁{brand_name}┃枫林影视┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/枫林影视?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "枫林影视",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_梨园行[戏]",
+      "name": "🎭{brand_name}┃梨园行┃[戏]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/梨园行[戏]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "梨园行",
+      "author": "EylinSir",
+      "类型": "影视",
+      "logo": "https://img.znds.com//uploads/new/221222/9-2212221050561N.png",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_爱看机器人[虫]",
+      "name": "🤖{brand_name}┃爱看机器人┃[虫]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/爱看机器人[虫]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "爱看机器人",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_爱看高清",
+      "name": "🔍{brand_name}┃爱看高清┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/爱看高清?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "爱看高清",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_王子TV",
+      "name": "👑{brand_name}┃王子TV┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/王子TV?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "王子TV",
+      "logo": "https://i-blog.csdnimg.cn/blog_migrate/2621e710a94ab40ba66645d47f296aaf.gif",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_贝乐虎[儿]",
+      "name": "🐯{brand_name}┃贝乐虎┃[儿]",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/贝乐虎[儿]?pwd={api_pwd}",
+      "searchable": 0,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "贝乐虎",
+      "类型": "影视",
+      "mergeList": 1,
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_飞牛影视",
+      "name": "🐄{brand_name}┃飞牛影视┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/飞牛影视?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "飞牛影视",
+      "author": "EylinSir",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "drpyS_鬼片之家",
+      "name": "👻{brand_name}┃鬼片之家┃",
+      "type": 4,
+      "api": "http://8.130.134.173:5705/api/鬼片之家?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 0,
+      "quickSearch": 0,
+      "title": "鬼片之家",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
+      "key": "catvod_荐片",
+      "name": "📽️{brand_name}┃荐片┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/cat/荐片.js?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "荐片",
+      "lang": "cat",
+      "ext": ""
+    },
+    {
+      "key": "drpy2_爱看机器人[虫]",
+      "name": "⚙️{brand_name}┃爱看机器人┃[虫]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/public/drpy/drpy2.min.js",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "爱看机器人",
+      "lang": "dr2",
+      "ext": "http://8.130.134.173:5705/js/爱看机器人[虫].js?pwd={api_pwd}"
+    },
+    {
+      "key": "hipy_py_4KVM",
+      "name": "🖥️{brand_name}┃4KVM┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/4KVM.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "4KVM",
+      "lang": "hipy",
+      "ext": ""
+    },
+    {
+      "key": "hipy_py_看客联盟[AS]",
+      "name": "👥{brand_name}┃看客联盟┃[AS]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/AppSk.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "AppSk",
+      "lang": "hipy",
+      "ext": "{\"host\":\"https://kankelm.cn:2024/appdomain.txt\",\"key\":\"ygcnbcvybqqckwqy\",\"iv\":\"1583560747143708\"}"
+    },
+    {
+      "key": "hipy_py_2k动漫[AS]",
+      "name": "🖌️{brand_name}┃2k动漫┃[AS]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/AppSk.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "AppSk",
+      "lang": "hipy",
+      "ext": "{\"host\":\"https://dmsk.oss-rg-china-mainland.aliyuncs.com/dmapp/dmapi.txt\",\"key\":\"ygcnbcobcegtgigg\",\"iv\":\"4058263969143708\"}"
+    },
+    {
+      "key": "hipy_py_一起看[Ayq]",
+      "name": "👁️{brand_name}┃一起看┃[Ayq]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/AppYqk.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "AppYqk",
+      "lang": "hipy",
+      "ext": "{\"host\":\"https://gapi0320.3njzmrx1.com/config.json,https://gapi0320.lq0okex8.com/config.json,https://gapi0320.zabqs8xp.com/config.json,https://yappconfig-20250628-1318635097.cos.ap-shanghai.myqcloud.com/config.json,https://yconfig-20250628-1360051343.cos.ap-guangzhou.myqcloud.com/config.json\",\"appId\":\"d6d520ea90904f1ba680ed6c9c9f9007\",\"appkey\":\"70af67d2b6cf47679b397ea4c1886877\",\"udid\":\"bfc18c00-c866-46cb-8d7b-121c39b942d4\",\"bundlerId\":\"com.flotimingo.ts\",\"source\":\"1001_default\",\"version\":\"1.3.10\",\"versionCode\":1104}"
+    },
+    {
+      "key": "hipy_py_橘子TV[Ayq]",
+      "name": "🍊{brand_name}┃橘子TV┃[Ayq]",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/AppYqk.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "AppYqk",
+      "lang": "hipy",
+      "ext": "{\"host\":\"https://gapi0725.5p8jcjc.com/config.json,https://gapi0725.olrv5gz.com/config.json,https://gapi0725.mvljeat.com/config.json,https://jzapp-1318635097.cos.ap-shanghai.myqcloud.com/config.json,https://juzi-config-1360051343.cos.ap-shanghai.myqcloud.com/config.json\",\"appId\":\"fea23e11fc1241409682880e15fb2851\",\"appkey\":\"f384b87cc9ef41e4842dda977bae2c7f\",\"udid\":\"bfc18c00-c866-46cb-8d7b-121c39b942d4\",\"bundlerId\":\"com.voraguzzee.ts\",\"source\":\"1003_default\",\"version\":\"1.0.1\",\"versionCode\":1000}"
+    },
+    {
+      "key": "hipy_py_哇哇APP",
+      "name": "😮{brand_name}┃哇哇APP┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/哇哇APP.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "哇哇APP",
+      "lang": "hipy",
+      "ext": ""
+    },
+    {
+      "key": "hipy_py_欣欣影视",
+      "name": "💐{brand_name}┃欣欣影视┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/欣欣影视.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "欣欣影视",
+      "lang": "hipy",
+      "ext": ""
+    },
+    {
+      "key": "hipy_py_河马短剧",
+      "name": "🦛{brand_name}┃河马短剧┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/河马短剧.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "河马短剧",
+      "lang": "hipy",
+      "ext": ""
+    },
+    {
+      "key": "hipy_py_爱瓜APP",
+      "name": "🍉{brand_name}┃爱瓜APP┃",
+      "type": 3,
+      "api": "http://8.130.134.173:5705/py/爱瓜APP.py?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 1,
+      "quickSearch": 1,
+      "title": "爱瓜APP",
+      "lang": "hipy",
+      "ext": ""
+    },
+    {
+      "key": "玩偶",
+      "name": "玩偶 • 4K",
+      "type": 3,
+      "api": "csp_Wogg",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "快映",
+      "name": "快映 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "木偶",
+      "name": "木偶 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "蜡笔",
+      "name": "蜡笔 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "至臻",
+      "name": "至臻 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "多多",
+      "name": "多多 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "欧哥",
+      "name": "欧哥 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "二小",
+      "name": "二小 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "虎斑",
+      "name": "虎斑 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "夸父",
+      "name": "夸父 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShareKF",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "盘它",
+      "name": "盘它 • 4K",
+      "type": 3,
+      "api": "csp_PanWebSharePT",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "123",
+      "name": "123 • 4K",
+      "type": 3,
+      "api": "csp_PanWebShare123",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "指南",
+      "name": "指南 • 4K",
+      "type": 3,
+      "api": "csp_4KZhinan",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "人人",
+      "name": "人人 • 4K",
+      "type": 3,
+      "api": "csp_RenRen",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "即刻",
+      "name": "即刻 • 4K",
+      "type": 3,
+      "api": "csp_Jike",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "双星",
+      "name": "双星 • 4K",
+      "type": 3,
+      "api": "csp_ShuangXing",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "阿里云盘",
+      "name": "阿里｜云盘",
+      "type": 3,
+      "api": "csp_PanAli",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "夸克网盘",
+      "name": "夸克｜网盘",
+      "type": 3,
+      "api": "csp_PanQuark",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "UC网盘",
+      "name": "UC｜网盘",
+      "type": 3,
+      "api": "csp_PanUC",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "百度网盘",
+      "name": "百度｜网盘",
+      "type": 3,
+      "api": "csp_PanBaidu",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "PanLL",
+      "name": "⚡{brand_name}┃PanLL┃4K",
+      "type": 3,
+      "api": "csp_PanWebShareLL",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    },
+    {
+      "key": "PanQY",
+      "name": "⚡{brand_name}┃PanQY┃4K",
+      "type": 3,
+      "api": "csp_PanWebShareQY",
+      "searchable": 1,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    }
+  ],
+  "lives": [
+    {
+      "name": "develop202",
+      "type": 0,
+      "url": "https://gh.llkk.cc/http://raw.githubusercontent.com/develop202/migu_video/refs/heads/main/interface.txt",
+      "playerType": 2,
+      "epg": "http://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}"
+    },
+    {
+      "name": "冰 茶",
+      "type": 0,
+      "url": "https://bc.188766.xyz/?ip=&mishitong=true&mima=mianfeibuhuaqian&json=true",
+      "timeout": 10,
+      "ua": "bingcha/1.1(mianfeifenxiang)"
+    },
+    {
+      "name": "范明明（需开启V6网络）",
+      "type": 0,
+      "url": "https://nos.netease.com/ysf/3d75a78a0fc7ede372c03598d6d10367.m3u",
+      "playerType": 2
+    },
+    {
+      "name": "虎牙一起看",
+      "type": 0,
+      "url": "https://sub.ottiptv.cc/huyayqk.m3u",
+      "playerType": 2,
+      "timeout": 10,
+      "ua": "okHttp/Mod-1.5.0.0"
+    },
+    {
+      "name": "斗鱼一起看",
+      "type": 0,
+      "url": "https://sub.ottiptv.cc/douyuyqk.m3u",
+      "playerType": 2,
+      "timeout": 10,
+      "ua": "okHttp/Mod-1.5.0.0"
+    },
+    {
+      "name": "B站直播",
+      "type": 0,
+      "url": "https://sub.ottiptv.cc/bililive.m3u",
+      "playerType": 2,
+      "timeout": 10,
+      "ua": "okHttp/Mod-1.5.0.0"
+    },
+    {
+      "name": "YY轮播",
+      "type": 0,
+      "url": "https://sub.ottiptv.cc/yylunbo.m3u",
+      "playerType": 2,
+      "timeout": 10,
+      "ua": "okHttp/Mod-1.5.0.0"
+    },
+    {
+      "key": "配置中心",
+      "name": "⚙️{brand_name}┃配置中心",
+      "type": 3,
+      "api": "csp_Config",
+      "searchable": 0,
+      "changeable": 0,
+      "indexs": 0,
+      "style": {
+        "type": "rect",
+        "ratio": 1.597
+      }
+    }
+  ]
+}
