@@ -1091,6 +1091,7 @@ export default (fastify, options, done) => {
                                 return value.replace(/\{(\w+)\}/g, (match, key) => {
                                     if (key === 'brand_name') return brandName;
                                     if (key === 'api_pwd') return ENV.get('api_pwd', process.env.API_PWD || 'dzyyds');
+                                    if (key === 'api_host') return requestHost;
                                     return ENV.get(key, '');
                                 });
                             }
