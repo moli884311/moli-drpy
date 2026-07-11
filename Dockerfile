@@ -1,6 +1,6 @@
 # 构建器阶段
-# 使用node:20-alpine(17 < version < 23)作为基础镜像
-FROM node:20-alpine AS builder
+# 使用node:22-alpine作为基础镜像
+FROM node:22-alpine AS builder
 
 # 安装git
 RUN apk add --no-cache git make python3 py3-pip build-base
