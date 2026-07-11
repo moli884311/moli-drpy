@@ -969,6 +969,13 @@
   ],
   "lives": [
     {
+      "name": "沫离咪咕",
+      "type": 0,
+      "url": "http://8.130.134.173:1234/csj88431100",
+      "playerType": 2,
+      "epg": "http://epg.51zmt.top:8000/api/diyp/?ch={name}&date={date}"
+    },
+    {
       "name": "develop202",
       "type": 0,
       "url": "https://gh.llkk.cc/http://raw.githubusercontent.com/develop202/migu_video/refs/heads/main/interface.txt",
