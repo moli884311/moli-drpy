@@ -76,9 +76,20 @@ const init = async function (filePath, env = {}, refresh) {
         }
         
         log(`Loading module: ${filePath}`);
-        let rule = {};
-        // 初始化规则模块
-        await rule.init(moduleExt || {});
+        let rule;
+        try {
+            rule = JSON.parse(fileContent);
+        } catch {
+            rule = {};
+        }
+        if (typeof rule.init === 'function') {
+            await rule.init({
+                stype: 4,
+                skey: 'xbpq_' + filePath.replace(/.*[/\\]/, '').replace(/\.\w+$/, ''),
+                sourceKey: 'xbpq_' + filePath.replace(/.*[/\\]/, '').replace(/\.\w+$/, ''),
+                ext: moduleExt,
+            });
+        }
         const moduleObject = deepCopy(rule);
         
         // 将模块对象存入缓存
