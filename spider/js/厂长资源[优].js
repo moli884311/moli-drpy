@@ -19,8 +19,9 @@ var rule = {
     filter: 'H4sIAAAAAAAAA+2WUW/TMBSF/wvPSCiOc+v8nleQJm1CU6chRtkDQi5xGotgT0k6jQnx35GddemGEKMPE9r2kEo+9vnsa/fc2GkUMUYRn3Tf/mXe+5rn/c1ocmNGo58e+pgZ/CBuBzXGKX3ov9jO4ve5v55q0dA3mvbuHxylOC5HRHWk8bId71gN1hnsRHCykh2Gg4LmGsW8ALawtoLXu4jH28bFni5shK+WOGkmqJwKAcfJ8K0AR6mm4MBcEhsp0FLBw4aNn85r6f8uRyvnCUnfnK8EHCkcTE4qZicr9gVHioKDDfWXHcghhkNEM8tSRHojHKdlN88oxMqS/pXDSpu3ASm8jBEoj+JVs7dCO7w2U4tCYxTn+FJpe2kB71hFjx8rhWNwPPkA4N6mGyXMNVp1cW5r/pF2YRxRVmUnGf1/lwvjeHT1N/LT/gM+0j+AZ2gBQh3hQRkkbAj2NsEfNV1E8Y50L+7BPMmzA/uOf8P2e3H9Vg6EDWbL83Y1f99kMf+1n6EHLhQvphN++bGcb74m08ffP23yj9v8mxeDR60Zj9pRN7RtVswTmiLshH7FVrCbPfeHJ8vV6Yq8h7Woz3nx3+7lHrsh2nESrPTWuj/TJUO+z0skQ/Bz8GkYEvAUeO1GBo5nlDtAp4TpJIIQCa4gE0aqJNVE8F4KPSsjS0kmigZKp4NkUCgbS1JKk0iZRLJUSWqBB1KIQpFOiSSFkPIM8hCSj2NU4hgT0ZVCuq6ohqRU9JOkljJN0bBY4ZWS9BFNC6UnmtGQH2STBP8BywE2YC4HAAA=',
     filter_def: {},
     headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    },
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Cookie': 'sl-session=MTc2Mzk3NDIxMHxOd3dBTkV4RFJVVkZSVUpOUTFSRFVrVk5RVFZDVFZSRU5EZEdSVU5HTkVWQlFrVkJPUT09fN0Q_TMSKpgs5iBkEDG0VfBspm0LF9Ky2s4nGZz_slCz; wordpress_logged_in_d9242bd52cdc2a10321ff2c15b090da9=bingot%7C1766539951%7CCuNRhcQm3tWnZGWwF6qApg33pNexMpOhqHv8WtkFxDy%7Ca17041373c5d59e325f41c4fff76c8c63c4e8bcd63860b7ab06d9cc55d9dc97d3; myannoun=1',
+        'Referer': 'https://www.4kcz.com/'
     timeout: 15000,
     play_parse: true,
     // 使用首页"更多"链接对应的 taxonomy 归档页 (有 .bt_img 结构)
@@ -53,8 +54,19 @@ var rule = {
         let html = await request(input);
         let d = [];
         let items = pdfa(html, '.bt_img ul li');
+        if (!items.length) items = pdfa(html, '.mi_cont .bt_img ul li');
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         if (!items.length) items = pdfa(html, '.search_list ul li');
+        if (!items.length) {
+            // 宽泛兜底: 抓取所有含 dytit 的 li
+            let allItems = pdfa(html, 'li');
+            items = [];
+            for (let i = 0; i < allItems.length; i++) {
+                if (pdfh(allItems[i], 'h3.dytit&&a&&Text') || pdfh(allItems[i], '.dytit&&a&&Text')) {
+                    items.push(allItems[i]);
+                }
+            }
+        }
         items.forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
             let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
@@ -152,6 +164,15 @@ var rule = {
         let items = pdfa(html, '.search_list ul li');
         if (!items.length) items = pdfa(html, '.bt_img ul li');
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
+        if (!items.length) {
+            let allItems = pdfa(html, 'li');
+            items = [];
+            for (let i = 0; i < allItems.length; i++) {
+                if (pdfh(allItems[i], 'h3.dytit&&a&&Text') || pdfh(allItems[i], '.dytit&&a&&Text')) {
+                    items.push(allItems[i]);
+                }
+            }
+        }
         items.slice(0, 20).forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
             let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
