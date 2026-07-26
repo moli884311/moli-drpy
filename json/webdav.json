@@ -1,9 +1,9 @@
 [
   {
     "name": "Zn存档服",
-    "baseURL": "https://pan.8897122.xyz/dav",
-    "username": "webdavtv",
-    "password": "webdavtv",
+    "baseURL": "https://pan.clun.top/dav",
+    "username": "tvbox",
+    "password": "tvbox",
     "rejectUnauthorized": false,
     "showAll": false,
     "timeout": 30000
