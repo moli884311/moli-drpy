@@ -681,45 +681,6 @@
       "ext": ""
     },
     {
-      "key": "drpyS_WebDav[盘]",
-      "name": "💾WebDav┃WebDav[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/webdav[盘]?pwd={api_pwd}",
-      "searchable": 0,
-      "filterable": 0,
-      "quickSearch": 0,
-      "title": "webdav[盘]",
-      "类型": "影视",
-      "lang": "ds",
-      "ext": "H4sIAAAAAAAAA9PT088qzs/TL09NSkks0wOxASthelgTAAAA"
-    },
-    {
-      "key": "drpyS_WebDavZn[盘]",
-      "name": "💾WebDavZn┃WebDavZn[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/webdav[盘]?pwd={api_pwd}",
-      "searchable": 0,
-      "filterable": 0,
-      "quickSearch": 0,
-      "title": "webdav[盘]",
-      "类型": "影视",
-      "lang": "ds",
-      "ext": "H4sIAAAAAAAAA9PT088qzs/TL09NSkkse7p344vlbXogEQDz64JLGQAAAA=="
-    },
-    {
-      "key": "drpyS_FTP[盘]",
-      "name": "💾FTP┃FTP[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/ftp[盘]?pwd={api_pwd}",
-      "searchable": 0,
-      "filterable": 0,
-      "quickSearch": 0,
-      "title": "ftp[盘]",
-      "类型": "影视",
-      "lang": "ds",
-      "ext": "H4sIAAAAAAAAA9PT088qzs/TTysp0AMxAIzjQSIQAAAA"
-    },
-    {
       "key": "drpyS_傻样[盘]",
       "name": "💾傻样┃傻样[盘](DS)┃盘",
       "type": 4,
@@ -730,23 +691,6 @@
       "title": "傻样[盘]",
       "lang": "ds",
       "ext": ""
-    },
-    {
-      "key": "drpyS_WebDav影视[盘]",
-      "name": "💾WebDav影视┃WebDav影视[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/webdav影视[盘]?pwd={api_pwd}",
-      "searchable": 0,
-      "filterable": 0,
-      "quickSearch": 0,
-      "title": "webdav影视[盘]",
-      "类型": "影视",
-      "lang": "ds",
-      "style": {
-        "type": "list",
-        "ratio": 1.433
-      },
-      "ext": "H4sIAAAAAAAAA9PT088qzs/TL09NSkks0wOxASthelgTAAAA"
     },
     {
       "key": "drpyS_夸克影视[盘]",
@@ -784,19 +728,6 @@
       "quickSearch": 0,
       "title": "短剧网[盘]",
       "author": "EylinSir",
-      "类型": "影视",
-      "lang": "ds",
-      "ext": ""
-    },
-    {
-      "key": "drpyS_盘Ta[盘]",
-      "name": "💾盘Ta┃盘Ta[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/盘Ta[盘]?pwd={api_pwd}",
-      "searchable": 1,
-      "filterable": 0,
-      "quickSearch": 1,
-      "title": "盘Ta[盘]",
       "类型": "影视",
       "lang": "ds",
       "ext": ""
@@ -840,18 +771,6 @@
       "ext": ""
     },
     {
-      "key": "catvod_Alist[盘]",
-      "name": "💾Alist┃Alist[盘](cat)┃盘",
-      "type": 3,
-      "api": "{api_host}/cat/alist.js?pwd={api_pwd}",
-      "searchable": 1,
-      "filterable": 1,
-      "quickSearch": 1,
-      "title": "alist",
-      "lang": "cat",
-      "ext": "H4sIAAAAAAAAA9PT088qzs/TT8zJLC7RAzEB657OqRIAAAA="
-    },
-    {
       "key": "drpyS_蜡笔ᵐ[盘]",
       "name": "💾蜡笔ᵐ┃蜡笔ᵐ[盘](DS)┃盘",
       "type": 4,
@@ -889,19 +808,6 @@
       "类型": "影视",
       "lang": "ds",
       "ext": "H4sIAAAAAAAAA9PT088qzs/Tfzp//tMJvS9be5/vXacHElF53rfyaeM2FUMAXj8hgiIAAAA="
-    },
-    {
-      "key": "drpyS_虎斑ᵐ[盘]",
-      "name": "💾虎斑ᵐ┃虎斑ᵐ[盘](DS)┃盘",
-      "type": 4,
-      "api": "{api_host}/api/网盘[模板]?pwd={api_pwd}",
-      "searchable": 1,
-      "filterable": 1,
-      "quickSearch": 1,
-      "title": "网盘[模板]",
-      "类型": "影视",
-      "lang": "ds",
-      "ext": "H4sIAAAAAAAAA9PT088qzs/Tfzp//tMJvS9be5/vXacHElF5MbPv2bSJAFZ8CcsgAAAA"
     },
     {
       "key": "drpyS_多多ᵐ[盘]",
