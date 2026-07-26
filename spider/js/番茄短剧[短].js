@@ -10,14 +10,19 @@
 })
 */
 
-//搜索结果为书籍
+// 番茄短剧 — 自建反代 (fqgo.52dns.cc 已停)
+// 部署 proxy.js 后修改此地址
+const PROXY = 'http://127.0.0.1:3001';
 var rule = {
     title: '番茄短剧',
     '类型': '短剧',
-    host: 'http://fqgo.52dns.cc',
-    url: '/catalog?book_id=fyclass',
-    searchUrl: '/search?query=**&tab_type=12&offset=fypage',
-    detailUrl: '/catalog?book_id=fyid',
+  host: PROXY,
+
+  url: PROXY + '/catalog?book_id=fyclass',
+
+  searchUrl: PROXY + '/search?query=**&tab_type=12&offset=fypage',
+
+  detailUrl: PROXY + '/catalog?book_id=fyid',
     searchable: 2,
     quickSearch: 0,
     filterable: 0,
@@ -33,7 +38,7 @@ var rule = {
     lazy: async function () {
         let {input, MY_URL} = this;
         let id = MY_URL;
-        let api_url = rule.host + '/video?item_ids=' + id;
+        let api_url = PROXY + '/video?item_ids=' + id;
         let html = await request(api_url, {headers: rule.headers});
         let data = JSON.parse(html);
         let videoModel = JSON.parse(data.data[id].video_model);
@@ -145,36 +150,16 @@ var rule = {
         let KEY = input;
         let page = MY_PAGE;
         let offset = (page - 1) * 12;
-        let searchUrl = rule.host + '/search?query=' + KEY + '&tab_type=12&offset=' + offset;
+        let searchUrl = PROXY + '/search?query=' + encodeURIComponent(KEY) + '&tab_type=12&offset=' + offset;
         let html = await request(searchUrl, {headers: rule.headers});
         let data = JSON.parse(html);
-        let items = [];
-        if (data.search_tabs && data.search_tabs.length > 0) {
-            for (const tab of data.search_tabs) {
-                if (tab.title === '短剧' && tab.data) {
-                    items = tab.data;
-                    break;
-                }
-                if (tab.tab_type === 1 && tab.data) {
-                    items = tab.data;
-                }
-            }
-        }
+        let items = data.data || [];
         let VODS = items.map(item => {
-            let bookData = item.video_data && item.video_data.length > 0
-                ? item.video_data[0]
-                : {};
-            let title = bookData.title || '';
-            if (item.search_high_light?.title?.rich_text) {
-                title = item.search_high_light.title.rich_text
-                    .replace(/<em>/g, '')
-                    .replace(/<\/em>/g, '');
-            }
             return {
-                vod_id: bookData.book_id || item.book_id || '',
-                vod_name: title || '未知短剧',
-                vod_pic: bookData.cover || '',
-                vod_remarks: bookData.sub_title || bookData.rec_text || ''
+                vod_id: item.series_id || item.book_id || '',
+                vod_name: item.title || '未知短剧',
+                vod_pic: item.cover || '',
+                vod_remarks: item.sub_title || item.rec_text || ''
             };
         });
         return VODS

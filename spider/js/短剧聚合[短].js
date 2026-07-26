@@ -10,6 +10,9 @@
 })
 */
 
+// 番茄短剧自建反代 (部署 proxy.js 后修改此地址)
+const FQ_PROXY = 'http://127.0.0.1:3001';
+
 globalThis.aggConfig = {
   keys: 'd3dGiJc651gSQ8w1',
   charMap: {
@@ -27,7 +30,7 @@ globalThis.aggConfig = {
     百度: { host: 'https://api.jkyai.top', url1: '/API/bddjss.php?name=fyclass&page=fypage', url2: '/API/bddjss.php?id=fyid', search: '/API/bddjss.php?name=**&page=fypage' },
     甜圈: { host: 'https://mov.cenguigui.cn', url1: '/duanju/api.php?classname', url2: '/duanju/api.php?book_id', search: '/duanju/api.php?name' },
     锦鲤: { host: 'https://api.jinlidj.com', search: '/api/search', url2: '/api/detail' },
-     番茄: { host: 'https://reading.snssdk.com', url1: '/reading/bookapi/bookmall/cell/change/v', url2: 'https://fqgo.52dns.cc/catalog', url2_fallback: 'https://fanqienovel.com/api/reader/directory/detail', search: 'https://fqgo.52dns.cc/search', search_fallback: 'https://fanqienovel.com/api/goodreads/v1/search/book' },
+     番茄: { host: 'https://reading.snssdk.com', url1: '/reading/bookapi/bookmall/cell/change/v', url2: FQ_PROXY + '/catalog', url2_fallback: 'https://fanqienovel.com/api/reader/directory/detail', search: FQ_PROXY + '/search', search_fallback: 'https://fanqienovel.com/api/goodreads/v1/search/book' },
     星芽: { host: 'https://app.whjzjx.cn', url1: '/cloud/v2/theater/home_page?theater_class_id', url2: '/v2/theater_parent/detail', search: '/v3/search', loginUrl: 'https://u.shytkjgs.com/user/v1/account/login' },
     西饭: { host: 'https://xifan-api-cn.youlishipin.com', url1: '/xifan/drama/portalPage', url2: '/xifan/drama/getDuanjuInfo', search: '/xifan/search/getSearchList' },
     软鸭: { host: 'https://api.xingzhige.com', url1: '/API/playlet', search: '/API/playlet' },
@@ -521,11 +524,11 @@ var rule = {
     }
     if (/番茄/.test(flag)) {
       try {
-        const res = JSON.parse(await request(`https://fqgo.52dns.cc/video?item_ids=${input}`, { headers: cfg.headers.default }));
+        const res = JSON.parse(await request(FQ_PROXY + '/video?item_ids=' + input, { headers: cfg.headers.default }));
         const videoModel = res.data?.[input] ? JSON.parse(res.data[input].video_model) : null;
         const url = videoModel?.video_list?.video_1 ? atob(videoModel.video_list.video_1.main_url) : '';
         if (url) return { parse: 0, url };
-      } catch (e) { log(`番茄播放(fqgo)失败: ${e.message}`); }
+      } catch (e) { log(`番茄播放(proxy)失败: ${e.message}`); }
       try {
         const res = JSON.parse(await request(`https://fanqienovel.com/api/reader/directory/detail?bookId=${input}`, { headers: cfg.headers.default }));
         return { parse: 0, url: '' };
