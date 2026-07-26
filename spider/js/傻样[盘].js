@@ -143,15 +143,27 @@ var rule = {
         // 收集所有线路信息（用于后续排序）
         let allLines = [];
 
-        // 1. 统一收集所有链接并自动去重
+         // 1. 统一收集所有链接并自动去重
         let allLinks = new Set();
         for (let item of data) {
-            let link = pd(item, 'p&&Text');
+            let link = pd(item, 'p&&Text') || pd(item, 'a&&href') || pdfh(item, '*&&Text');
             if (link) {
                 link = link.trim();
-                allLinks.add(link); 
+                allLinks.add(link);
             }
         }
+
+        // 兜底：如果 .module-row-title 没提取到链接，用正则从整页 HTML 提取
+        if (allLinks.size === 0) {
+            console.log('module-row-title 未提取到链接，使用正则兜底...');
+            let panRegex = /https?:\/\/(?:pan\.quark\.cn|drive\.uc\.cn|pan\.baidu\.com|cloud\.189\.cn|caiyun\.139\.com|www\.123pan\.com|www\.alipan\.com)[^"'\s<&]+/g;
+            let m;
+            while ((m = panRegex.exec(html)) !== null) {
+                allLinks.add(m[0]);
+            }
+        }
+
+        console.log(`提取到 ${allLinks.size} 个网盘链接`);
 
         // 2. 统计去重后的百度链接数量（用于百度线路命名逻辑）
         let baiduLinks = Array.from(allLinks).filter(link => /pan\.baidu\.com/.test(link));
@@ -161,127 +173,139 @@ var rule = {
         for (let link of allLinks) {
             // 夸克网盘处理
             if (/\.quark/.test(link)) {
-                playPans.push(link);
-                let shareData = await Quark.getShareData(link);
-                if (shareData) {
-                    let videos = await Quark.getFilesByShareUrl(shareData);
-                    let lineName = '夸克#' + panCounters.夸克;
-                    // 处理视频链接或失效提示
-                    let playUrl = videos.length > 0 
-                        ? videos.map(v => `${v.file_name}$${[
-                            shareData.shareId,
-                            v.stoken,
-                            v.fid,
-                            v.share_fid_token,
-                            v.subtitle?.fid || '',
-                            v.subtitle?.share_fid_token || ''
-                        ].join('*')}`).join('#')
-                        : "资源已经失效，请访问其他资源";
-                    allLines.push({ name: lineName, url: playUrl, type: '夸克' });
-                    panCounters.夸克++;
-                }
+                try {
+                    playPans.push(link);
+                    let shareData = await Quark.getShareData(link);
+                    if (shareData) {
+                        let videos = await Quark.getFilesByShareUrl(shareData);
+                        let lineName = '夸克#' + panCounters.夸克;
+                        let playUrl = videos.length > 0 
+                            ? videos.map(v => `${v.file_name}$${[
+                                shareData.shareId,
+                                v.stoken,
+                                v.fid,
+                                v.share_fid_token,
+                                v.subtitle?.fid || '',
+                                v.subtitle?.share_fid_token || ''
+                            ].join('*')}`).join('#')
+                            : "资源已经失效，请访问其他资源";
+                        allLines.push({ name: lineName, url: playUrl, type: '夸克' });
+                        panCounters.夸克++;
+                    }
+                } catch(e) { console.log('夸克API失败:', link, e.message); }
             }
             // 优汐（UC）网盘处理
             else if (/\.uc/i.test(link)) {
-                playPans.push(link);
-                let shareData = await UC.getShareData(link);
-                if (shareData) {
-                    let videos = await UC.getFilesByShareUrl(shareData);
-                    let lineName = '优汐#' + panCounters.优汐;
-                    let playUrl = videos.length > 0 
-                        ? videos.map(v => `${v.file_name}$${[
-                            shareData.shareId,
-                            v.stoken,
-                            v.fid,
-                            v.share_fid_token,
-                            v.subtitle?.fid || '',
-                            v.subtitle?.share_fid_token || ''
-                        ].join('*')}`).join('#')
-                        : "资源已经失效，请访问其他资源";
-                    allLines.push({ name: lineName, url: playUrl, type: '优汐' });
-                    panCounters.优汐++;
-                }
+                try {
+                    playPans.push(link);
+                    let shareData = await UC.getShareData(link);
+                    if (shareData) {
+                        let videos = await UC.getFilesByShareUrl(shareData);
+                        let lineName = '优汐#' + panCounters.优汐;
+                        let playUrl = videos.length > 0 
+                            ? videos.map(v => `${v.file_name}$${[
+                                shareData.shareId,
+                                v.stoken,
+                                v.fid,
+                                v.share_fid_token,
+                                v.subtitle?.fid || '',
+                                v.subtitle?.share_fid_token || ''
+                            ].join('*')}`).join('#')
+                            : "资源已经失效，请访问其他资源";
+                        allLines.push({ name: lineName, url: playUrl, type: '优汐' });
+                        panCounters.优汐++;
+                    }
+                } catch(e) { console.log('UC API失败:', link, e.message); }
             }
             // 天翼网盘处理
             else if (/\.189/.test(link)) {
-                playPans.push(link);
-                let cloudData = await Cloud.getShareData(link);
-                Object.keys(cloudData).forEach(it => {
-                    let lineName = '天翼-' + it;
-                    const urls = cloudData[it].map(item => 
-                        `${item.name}$${[item.fileId, item.shareId].join('*')}`
-                    ).join('#');
-                    allLines.push({ name: lineName, url: urls, type: '天翼' });
-                });
+                try {
+                    playPans.push(link);
+                    let cloudData = await Cloud.getShareData(link);
+                    Object.keys(cloudData).forEach(it => {
+                        let lineName = '天翼-' + it;
+                        const urls = cloudData[it].map(item => 
+                            `${item.name}$${[item.fileId, item.shareId].join('*')}`
+                        ).join('#');
+                        allLines.push({ name: lineName, url: urls, type: '天翼' });
+                    });
+                } catch(e) { console.log('天翼API失败:', link, e.message); }
             }
             // 移动网盘处理
             else if (/\.139/.test(link)) {
-                playPans.push(link);
-                let yunData = await Yun.getShareData(link);
-                Object.keys(yunData).forEach(it => {
-                    let lineName = '移动-' + it;
-                    const urls = yunData[it].map(item => 
-                        `${item.name}$${[item.contentId, item.linkID].join('*')}`
-                    ).join('#');
-                    allLines.push({ name: lineName, url: urls, type: '移动' });
-                });
+                try {
+                    playPans.push(link);
+                    let yunData = await Yun.getShareData(link);
+                    Object.keys(yunData).forEach(it => {
+                        let lineName = '移动-' + it;
+                        const urls = yunData[it].map(item => 
+                            `${item.name}$${[item.contentId, item.linkID].join('*')}`
+                        ).join('#');
+                        allLines.push({ name: lineName, url: urls, type: '移动' });
+                    });
+                } catch(e) { console.log('移动API失败:', link, e.message); }
             }
             // 123网盘处理
             else if (/\.123/.test(link)) {
-                playPans.push(link);
-                let shareData = await Pan.getShareData(link);
-                let videos = await Pan.getFilesByShareUrl(shareData);
-                Object.keys(videos).forEach(it => {
-                    let lineName = '123-' + it;
-                    const urls = videos[it].map(v => 
-                        `${v.FileName}$${[v.ShareKey, v.FileId, v.S3KeyFlag, v.Size, v.Etag].join('*')}`
-                    ).join('#');
-                    allLines.push({ name: lineName, url: urls, type: '123' });
-                });
+                try {
+                    playPans.push(link);
+                    let shareData = await Pan.getShareData(link);
+                    let videos = await Pan.getFilesByShareUrl(shareData);
+                    Object.keys(videos).forEach(it => {
+                        let lineName = '123-' + it;
+                        const urls = videos[it].map(v => 
+                            `${v.FileName}$${[v.ShareKey, v.FileId, v.S3KeyFlag, v.Size, v.Etag].join('*')}`
+                        ).join('#');
+                        allLines.push({ name: lineName, url: urls, type: '123' });
+                    });
+                } catch(e) { console.log('123API失败:', link, e.message); }
             }
-            // 百度网盘处理（保留原命名逻辑）
+            // 百度网盘处理
             else if (/\.baidu/.test(link)) {
-                playPans.push(link);
-                let baiduData = await Baidu2.getShareData(link);
+                try {
+                    playPans.push(link);
+                    let baiduData = await Baidu2.getShareData(link);
                 
-                Object.keys(baiduData).forEach((it, index) => {
-                    let lineName;
-                    // 单个百度链接：命名为"百度#1"；多个：按链接后缀命名
-                    if (baiduLinkCount === 1) {
-                        lineName = '百度#1';
-                    } else {
-                        let lastPart = it.split('/').pop();
-                        lineName = '百度-' + lastPart;
-                    }
+                    Object.keys(baiduData).forEach((it, index) => {
+                        let lineName;
+                        if (baiduLinkCount === 1) {
+                            lineName = '百度#1';
+                        } else {
+                            let lastPart = it.split('/').pop();
+                            lineName = '百度-' + lastPart;
+                        }
 
-                    const urls = baiduData[it].map(item => 
-                        item.name + "$" + [item.path, item.uk, item.shareid, item.fsid].join('*')
-                    ).join('#');
-                    allLines.push({ name: lineName, url: urls, type: '百度' });
-                });
+                        const urls = baiduData[it].map(item => 
+                            item.name + "$" + [item.path, item.uk, item.shareid, item.fsid].join('*')
+                        ).join('#');
+                        allLines.push({ name: lineName, url: urls, type: '百度' });
+                    });
+                } catch(e) { console.log('百度API失败:', link, e.message); }
             }
             else if (/\.alipan/.test(link)) {
-                playPans.push(link);
-                const shareData = await Ali.getShareData(link);
-                if (shareData) {
-                    const videos = await Ali.getFilesByShareUrl(shareData);
-                    let lineName = '阿里#' + panCounters.阿里; 
-                    let playUrl;
-                    if (videos.length > 0) {
-                        playUrl = videos.map((v) => {
-                            const ids = [
-                                v.share_id, 
-                                v.file_id, 
-                                v.subtitle ? v.subtitle.file_id : ''
-                            ];
-                            return `${v.name}$${ids.join('*')}`;
-                        }).join('#');
-                    } else {
-                        playUrl = "资源已经失效，请访问其他资源"; // 失效提示与其他网盘统一
+                try {
+                    playPans.push(link);
+                    const shareData = await Ali.getShareData(link);
+                    if (shareData) {
+                        const videos = await Ali.getFilesByShareUrl(shareData);
+                        let lineName = '阿里#' + panCounters.阿里; 
+                        let playUrl;
+                        if (videos.length > 0) {
+                            playUrl = videos.map((v) => {
+                                const ids = [
+                                    v.share_id, 
+                                    v.file_id, 
+                                    v.subtitle ? v.subtitle.file_id : ''
+                                ];
+                                return `${v.name}$${ids.join('*')}`;
+                            }).join('#');
+                        } else {
+                            playUrl = "资源已经失效，请访问其他资源";
+                        }
+                        allLines.push({ name: lineName, url: playUrl, type: '阿里' });
+                        panCounters.阿里++; 
                     }
-                    allLines.push({ name: lineName, url: playUrl, type: '阿里' });
-                    panCounters.阿里++; 
-                }
+                } catch(e) { console.log('阿里API失败:', link, e.message); }
             }
         }
 

@@ -127,13 +127,34 @@ class Spider(Spider):
         title = re.sub(r'^【[^】]+】', '', title).strip() or "未知标题"
 
         play_url_list = []
-        link_pattern = r'<a[^>]*href="([^"]*)"[^>]*>.*?</a>'
-        for match in re.finditer(link_pattern, html_text, re.S):
-            href = match.group(1)
-            if href and "pan.baidu.com" in href:
+
+        # 方法1: 从 a 标签提取网盘链接
+        link_pattern = r'''<a[^>]*href=["']([^"']*(?:pan\.baidu\.com|pan\.quark\.cn|drive\.uc\.cn|www\.alipan\.com)[^"']*)'''
+        for match in re.findall(link_pattern, html_text, re.I):
+            href = match.strip()
+            if "pan.baidu.com" in href:
                 play_url_list.append(f"百度网盘$push://{href}")
-            elif href and "pan.quark.cn" in href:
+            elif "pan.quark.cn" in href:
                 play_url_list.append(f"夸克网盘$push://{href}")
+            elif "drive.uc.cn" in href:
+                play_url_list.append(f"UC网盘$push://{href}")
+            elif "www.alipan.com" in href:
+                play_url_list.append(f"阿里云盘$push://{href}")
+
+        # 方法2: 直接从 HTML 文本提取网盘 URL(不限于 a 标签)
+        pan_urls = set()
+        pan_url_pattern = r'''https?://(?:pan\.baidu\.com|pan\.quark\.cn|drive\.uc\.cn|www\.alipan\.com|cloud\.189\.cn|caiyun\.139\.com|www\.123pan\.com)[^"'<>\s&]+'''
+        for href in re.findall(pan_url_pattern, html_text, re.I):
+            if href not in pan_urls:
+                pan_urls.add(href)
+                if "pan.baidu.com" in href:
+                    play_url_list.append(f"百度网盘$push://{href}")
+                elif "pan.quark.cn" in href:
+                    play_url_list.append(f"夸克网盘$push://{href}")
+                elif "drive.uc.cn" in href:
+                    play_url_list.append(f"UC网盘$push://{href}")
+                elif "www.alipan.com" in href:
+                    play_url_list.append(f"阿里云盘$push://{href}")
 
         play_from = "剧透社" if play_url_list else "无资源"
         play_url = "#".join(play_url_list) if play_url_list else "暂无资源$#"

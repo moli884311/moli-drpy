@@ -69,7 +69,6 @@ var rule = {
             let descLines = pdfa(html, '.stui-content__detail p.data').slice(0, 5).map(p => pdfh(p, 'p&&Text'));
             let allDesc = descLines.join(' ');
             const getMeta = (key) => (allDesc.match(new RegExp(`${key}：([^\\/]+)`)) || [])[1]?.trim() || '';
-
             VOD.vod_type = getMeta('类型');
             VOD.vod_area = getMeta('地区');
             VOD.vod_year = getMeta('年份');
@@ -80,75 +79,87 @@ var rule = {
             VOD.vod_remarks = descLines.join(' ');
 
             let playform = [], playurls = [], playPans = [];
-            let sections = pdfa(html, '.stui-vodlist__head');
 
-            for (let sec of sections) {
-                let lineName = (pdfh(sec, '.stui-pannel__head h3&&Text') || pdfh(sec, 'h3&&Text') || '').replace(/[\uE000-\uF8FF]/g, '').trim();
+            // 新版站点: h3 + .stui-content__playlist 是相邻兄弟，都在 .stui-pannel-box 内
+            let pboxHtml = pdfh(html, '.stui-pannel-box&&Html') || '';
+            let h3Regex = /<h3[^>]*>(.*?)<\/h3>/g;
+            let h3Match, lastIndex = 0;
+
+            while ((h3Match = h3Regex.exec(pboxHtml)) !== null) {
+                let lineName = h3Match[1].replace(/[\uE000-\uF8FF]/g, '').trim();
                 if (!lineName) continue;
 
+                let segEnd = pboxHtml.indexOf('<h3', h3Match.index + h3Match[0].length);
+                if (segEnd < 0) segEnd = pboxHtml.length;
+                let section = pboxHtml.substring(h3Match.index + h3Match[0].length, segEnd);
+
+                let plMatch = section.match(/<ul[^>]*class="[^"]*stui-content__playlist[^"]*"[^>]*>([\s\S]*?)<\/ul>/);
                 let isPan = /夸克|UC|百度|网盘|下载/.test(lineName);
-                let links = pdfa(sec, '.stui-content__playlist li a');
-                let episodeList = [];
 
-                if (isPan) {
-                    let panUrls = new Set();
-                    for (let a of links) {
-                        let url = pd(a, 'a&&href', input);
-                        if (!url) continue;
-                        try {
-                            let playHtml = await request(url);
-                            let matches = [...playHtml.matchAll(/var player_[^=]*=\s*({[^}]+})/g)];
-                            for (let m of matches) {
-                                try {
-                                    let data = JSON.parse(m[1]);
-                                    if (data.from && data.url) {
-                                        let u = data.url.replace(/\\\//g, '/');
-                                        panUrls.add(u);
-                                        playPans.push(u);
-                                    }
-                                } catch {}
+                if (plMatch || isPan) {
+                    let linkRegex = /<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g;
+                    let linkMatch;
+                    let episodes = [];
+
+                    if (isPan) {
+                        let panUrls = new Set();
+                        // 从整个section找网盘链接
+                        let panRegex = /https?:\/\/(?:pan\.quark\.cn|drive\.uc\.cn|pan\.baidu\.com)[^"'\s<>&]+/g;
+                        let panMatch;
+                        while ((panMatch = panRegex.exec(section)) !== null) {
+                            panUrls.add(panMatch[0]);
+                        }
+                        // 也检查a标签
+                        while ((linkMatch = linkRegex.exec(section)) !== null) {
+                            if (/pan\.quark\.cn|drive\.uc\.cn|pan\.baidu\.com/.test(linkMatch[1])) {
+                                panUrls.add(linkMatch[1]);
                             }
-                        } catch {}
-                    }
-
-                    for (let u of panUrls) {
-                        let videos = [];
-                        let sd = null;
-
-                        if (u.includes('pan.quark.cn')) {
-                            sd = await Quark.getShareData(u);
-                            if (sd) videos = await Quark.getFilesByShareUrl(sd);
-                        } else if (u.includes('drive.uc.cn')) {
-                            sd = await UC.getShareData(u);
-                            if (sd) videos = await UC.getFilesByShareUrl(sd);
-                        } else if (u.includes('pan.baidu.com')) {
-                            sd = await Baidu2.getShareData(u);
-                            if (sd) videos = Object.values(sd).flat();
                         }
 
-                        videos.forEach(v => {
-                            let name = v.file_name || v.name || '文件';
-                            let token;
-                            if (u.includes('baidu.com')) {
-                                token = [v.path, v.uk, v.shareid, v.fsid].join('*');
-                            } else {
-                                if (!sd) return;
-                                token = [sd.shareId, v.stoken, v.fid, v.share_fid_token, v.subtitle?.fid || '', v.subtitle?.share_fid_token || ''].join('*');
-                            }
-                            episodeList.push(`${name}$${token}`);
-                        });
-                    }
-                } else {
-                    episodeList = links.map(a => {
-                        let title = pdfh(a, 'a&&Text');
-                        let href = pd(a, 'a&&href', input);
-                        return title && href ? `${title}$${href}` : '';
-                    }).filter(Boolean);
-                }
+                        for (let u of panUrls) {
+                            playPans.push(u);
+                            let sd = null, videos = [];
+                            try {
+                                if (u.includes('pan.quark.cn')) { sd = await Quark.getShareData(u); if (sd) videos = await Quark.getFilesByShareUrl(sd); }
+                                else if (u.includes('drive.uc.cn')) { sd = await UC.getShareData(u); if (sd) videos = await UC.getFilesByShareUrl(sd); }
+                                else if (u.includes('pan.baidu.com')) { sd = await Baidu2.getShareData(u); if (sd) videos = Object.values(sd).flat(); }
+                            } catch (e) { console.log('pan api error:', e.message); }
 
-                if (episodeList.length) {
-                    playform.push(lineName);
-                    playurls.push(episodeList.join('#'));
+                            if (videos.length) {
+                                videos.forEach(v => {
+                                    let name = v.file_name || v.name || '文件';
+                                    let token = u.includes('baidu.com')
+                                        ? [v.path, v.uk, v.shareid, v.fsid].join('*')
+                                        : [sd.shareId, v.stoken, v.fid, v.share_fid_token, v.subtitle?.fid || '', v.subtitle?.share_fid_token || ''].join('*');
+                                    episodes.push(name + '$' + token);
+                                });
+                            }
+
+                            if (!episodes.length && u.includes('pan.baidu.com')) {
+                                try {
+                                    sd = await Baidu2.getShareData(u);
+                                    if (sd) {
+                                        let bdVideos = Object.values(sd).flat();
+                                        if (bdVideos.length) {
+                                            bdVideos.forEach(v => episodes.push(v.name + '$' + [v.path, v.uk, v.shareid, v.fsid].join('*')));
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                    } else if (plMatch) {
+                        let plHtml = plMatch[1];
+                        while ((linkMatch = linkRegex.exec(plHtml)) !== null) {
+                            let title = linkMatch[2].trim();
+                            let href = linkMatch[1];
+                            if (title && href) episodes.push(title + '$' + href);
+                        }
+                    }
+
+                    if (episodes.length) {
+                        playform.push(lineName);
+                        playurls.push(episodes.join('#'));
+                    }
                 }
             }
 
