@@ -31,50 +31,15 @@ var rule = {
     },
 
     推荐: async function () {
-        let { pdfa, pdfh, pd } = this;
-        let html = await request(this.host);
-        let d = [];
-        let items = pdfa(html, '.mi_btcon .bt_img ul li');
-        if (!items.length) items = pdfa(html, '.bt_img ul li');
-        items.slice(0, 18).forEach(it => {
-            let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            let title = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || '';
-            let img = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
-            let desc = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '';
-            if (!link || !title) return;
-            d.push({ title, img, desc, url: link });
-        });
-        return setResult(d);
+        return setResult([
+            { title: 'TEST-推荐被调用-仙逆', img: '', desc: '测试', url: '/movie/2586.html' }
+        ]);
     },
 
     一级: async function () {
-        let { input, pdfa, pdfh, pd } = this;
-        let html = await request(input);
-        let d = [];
-        let items = pdfa(html, '.bt_img ul li');
-        if (!items.length) items = pdfa(html, '.mi_cont .bt_img ul li');
-        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
-        if (!items.length) items = pdfa(html, '.search_list ul li');
-        if (!items.length) {
-            // 宽泛兜底: 抓取所有含 dytit 的 li
-            let allItems = pdfa(html, 'li');
-            items = [];
-            for (let i = 0; i < allItems.length; i++) {
-                if (pdfh(allItems[i], 'h3.dytit&&a&&Text') || pdfh(allItems[i], '.dytit&&a&&Text')) {
-                    items.push(allItems[i]);
-                }
-            }
-        }
-        items.forEach(it => {
-            let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
-            let pic = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
-            let remarks = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || pdfh(it, '.qb&&Text') || '';
-            if (!link || !name) return;
-            if (!link.startsWith('http')) link = this.host + link;
-            d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
-        });
-        return setResult(d);
+        return setResult([
+            { vod_id: '/movie/2586.html', vod_name: 'TEST-一级被调用-仙逆', vod_pic: '', vod_remarks: '测试项' }
+        ]);
     },
 
     二级: async function (ids) {
