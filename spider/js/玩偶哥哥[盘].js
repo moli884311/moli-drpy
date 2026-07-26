@@ -11,7 +11,8 @@
 var rule = {
     title: '玩偶哥哥[盘]',
     // host: 'https://www.wogg.net',
-    host: 'https://www.wogg.one/',
+    // host: 'https://www.wogg.one/',
+    host: 'https://woog.nxog.fun/',
     url: '/vodshow/fyclass-fyfilter.html',
     filter_url: '{{fl.area}}-{{fl.by or fl.time}}-{{fl.class}}-----fypage---{{fl.year}}',
     searchUrl: '/vodsearch/**--------fypage---.html',

@@ -17,7 +17,7 @@
       },
       {
         name: '模拟设置玩偶域名',
-        action: '{\'actionId\':\'玩偶域名\',\'id\':\'domain\',\'type\':\'input\',\'width\':450,\'title\':\'玩偶域名\',\'tip\':\'请输入玩偶域名\',\'value\':\'\',\'msg\':\'选择或输入使用的域名\',\'selectData\':\'1:=https://www.wogg.net/,2:=https://wogg.xxooo.cf/,3:=https://wogg.888484.xyz/,4:=https://www.wogg.bf/,5:=https://woggapi.333232.xyz/\'}'
+        action: '{\'actionId\':\'玩偶域名\',\'id\':\'domain\',\'type\':\'input\',\'width\':450,\'title\':\'玩偶域名\',\'tip\':\'请输入玩偶域名\',\'value\':\'\',\'msg\':\'选择或输入使用的域名\',\'selectData\':\'1:=https://woog.nxog.fun/,2:=https://woog.nxog.eu.org/,3:=https://woog.430520.xyz/,4:=https://woog.xn--dkw.xn--6qq986b3xl/,5:=https://ogkk.nxog.fun/\'}'
       }
     ]
   },
@@ -144,7 +144,7 @@ const data = [
             tip: '请输入玩偶域名',
             value: '',
             msg: '选择或输入使用的域名',
-            selectData: '1:=https://www.wogg.net/,2:=https://wogg.xxooo.cf/,3:=https://wogg.888484.xyz/,4:=https://www.wogg.bf/,5:=https://woggapi.333232.xyz/'
+            selectData: '1:=https://woog.nxog.fun/,2:=https://woog.nxog.eu.org/,3:=https://woog.430520.xyz/,4:=https://woog.xn--dkw.xn--6qq986b3xl/,5:=https://ogkk.nxog.fun/'
         }), 
         vod_name: '玩偶域名',
         vod_tag:'action'
@@ -495,7 +495,7 @@ var rule = {
                     tip: '请输入玩偶域名',
                     value: '',
                     msg: '选择或输入使用的域名',
-                    selectData: '1:=https://www.wogg.net/,2:=https://wogg.xxooo.cf/,3:=https://wogg.888484.xyz/,4:=https://www.wogg.bf/,5:=https://woggapi.333232.xyz/'
+                    selectData: '1:=https://woog.nxog.fun/,2:=https://woog.nxog.eu.org/,3:=https://woog.430520.xyz/,4:=https://woog.xn--dkw.xn--6qq986b3xl/,5:=https://ogkk.nxog.fun/'
                 })
             },
         ],

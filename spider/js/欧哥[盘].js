@@ -10,7 +10,7 @@
 
 var rule = {
     title: '欧哥[盘]',
-    host: 'https://woog.nxog.eu.org',
+    host: 'https://woog.nxog.fun',
     url: '/index.php/vod/show/id/fyfilter.html',
     filter_url: '{{fl.cateId}}{{fl.area}}{{fl.by}}{{fl.class}}{{fl.lang}}{{fl.letter}}/page/fypage{{fl.year}}',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',

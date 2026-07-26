@@ -22,7 +22,8 @@ let vod_ids = []
 var rule = {
     title: '玩偶哥哥[盘]',
     // host: 'https://www.wogg.net',
-    host: 'https://www.wogg.one/',
+    // host: 'https://www.wogg.one/',
+    host: 'https://woog.nxog.fun/',
     url: '/index.php/vodshow/fyclass-fyfilter.html',
     filter_url: '{{fl.area}}-{{fl.by or "time"}}-{{fl.class}}-{{fl.lang}}-{{fl.letter}}---fypage---{{fl.year}}',
     searchUrl: '/vodsearch/**----------fypage---.html',
