@@ -1,6 +1,6 @@
 /*
 @header({
-  searchable: 2,
+   searchable: 1,
   filterable: 0,
   quickSearch: 0,
   title: '厂长资源[优]',
@@ -13,7 +13,7 @@ var rule = {
     host: 'https://www.4kcz.com',
     url: '/fyclass',
     searchUrl: '/boss1O1?q=**',
-    searchable: 2,
+  searchable: 1,
     quickSearch: 0,
     filterable: 0,
     filter_def: {},
@@ -158,7 +158,7 @@ var rule = {
         let { input, pdfa, pdfh, pd } = this;
         let html = await request(input);
         let d = [];
-        let items = pdfa(html, '.search_list ul li');
+        let items = pdfa(html, '.search_list li');
         if (!items.length) items = pdfa(html, '.bt_img ul li');
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         if (!items.length) {
