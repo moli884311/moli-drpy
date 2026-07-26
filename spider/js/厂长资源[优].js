@@ -23,8 +23,9 @@ var rule = {
     },
     timeout: 15000,
     play_parse: true,
-    class_name: '最新电影&国产剧&美剧&韩剧&番剧&日剧&剧场版&豆瓣Top250&海外剧',
-    class_url: 'zuixindianying&gcj&meijutt&hanjutv&fanju&riju&dongmanjuchangban&dbtop250&haiwaijuqita',
+    // 使用首页"更多"链接对应的 taxonomy 归档页 (有 .bt_img 结构)
+    class_name: '电影&国产剧&美剧&韩剧&日剧&追番(动漫)',
+    class_url: 'movie_bt_series/dyy&movie_bt_series/guochanju&movie_bt_series/mj&movie_bt_series/hj&movie_bt_series/rj&movie_bt_view_cat/fjj',
 
     预处理: async function () {
         return [];
@@ -52,15 +53,18 @@ var rule = {
         let { input, pdfa, pdfh, pd } = this;
         let html = await request(input);
         let d = [];
+        // 匹配 taxonomy 归档页 (含 .bt_img) 和搜索页
         let items = pdfa(html, '.bt_img ul li');
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
+        if (!items.length) items = pdfa(html, '.search_list ul li');
         items.forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
+            if (link && !link.startsWith('http')) link = this.host + link;
             d.push({
                 vod_id: link,
-                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || '',
+                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
                 vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
-                vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || ''
+                vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || pdfh(it, '.qb&&Text') || ''
             });
         });
         return setResult(d.filter(x => x.vod_id && x.vod_name));
@@ -86,7 +90,6 @@ var rule = {
 
         // 标题
         VOD.vod_name = pdfh(html, '.moviedteail_tt h1&&Text') || pdfh(html, 'h3.dy_tit_big&&Text') || pdfh(html, 'meta[property="og:title"]&&content') || '';
-        // 去除标题后的 |年份
         if (VOD.vod_name.includes('|')) {
             let parts = VOD.vod_name.split('|');
             VOD.vod_name = parts[0].trim();
@@ -112,7 +115,6 @@ var rule = {
 
         // 简介
         VOD.vod_content = pdfh(html, '.yp_context&&Text') || pdfh(html, 'meta[property="og:description"]&&content') || '';
-        // 清理 html 标签
         VOD.vod_content = VOD.vod_content.replace(/<[^>]+>/g, '').trim();
 
         // 播放列表
@@ -122,7 +124,6 @@ var rule = {
                 let href = pd(a, 'a&&href') || '';
                 let title = pdfh(a, 'a&&Text') || '';
                 if (!title || !href) return '';
-                // 清理标题中的 HTML 实体
                 title = title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
                 return title + '$' + href;
             }).filter(Boolean);
@@ -131,7 +132,7 @@ var rule = {
             }
         }
 
-        // 备用: 通用选择器
+        // 备用选择器
         if (!VOD.vod_play_url) {
             let altList = pdfa(html, '.module-play-list a, .playlist a, .stui-content__playlist a, .myui-content__list a, #playlist1 a, .hl-plays-list a');
             if (altList.length) {
@@ -148,18 +149,18 @@ var rule = {
     },
 
     搜索: async function () {
-        let { input, pdfa, pdfh, pd } = this;
+        let { input, pdfa, pdfh, pd, KEY } = this;
         let html = await request(input);
         let d = [];
-        // 4kcz 搜索结果
         let items = pdfa(html, '.search_list ul li');
         if (!items.length) items = pdfa(html, '.bt_img ul li');
+        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         items.slice(0, 20).forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
             if (link && !link.startsWith('http')) link = this.host + link;
             d.push({
                 vod_id: link,
-                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || '',
+                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
                 vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
                 vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || ''
             });
@@ -169,14 +170,13 @@ var rule = {
 
     lazy: async function (flag, id, flags) {
         let { input } = this;
-        // 直链直接返回
         if (/\.(m3u8|mp4|mkv|flv|avi|ts)(\?|$)/i.test(input)) {
             return { parse: 0, url: input };
         }
 
         let html = await request(input);
 
-        // 步骤1: 尝试从播放页直接提取 player_data / url
+        // 步骤1: player_data
         let match = html.match(/r player_.*?=(.*?)<\/script>/);
         if (match?.[1]) {
             try {
@@ -188,12 +188,10 @@ var rule = {
             } catch (e) {}
         }
 
-        // 步骤2: 提取 iframe → py.php → 视频直链 (4kcz 核心逻辑)
+        // 步骤2: iframe → py.php → 视频直链
         let iframeSrc = this.pdfh(html, '.viframe&&src') || this.pdfh(html, 'iframe&&src');
         if (iframeSrc) {
-            // 修复 HTML 实体
             iframeSrc = iframeSrc.replace(/&amp;/g, '&');
-            // 提取 url 参数
             let urlMatch = iframeSrc.match(/[?&]url=([^&]+)/);
             if (urlMatch) {
                 let encodedUrl = urlMatch[1];
@@ -201,7 +199,6 @@ var rule = {
                 let playerHtml = await request(pyUrl, {
                     headers: { 'Referer': input }
                 });
-                // 提取 const mysvg = '...' 或 art.url = "..."
                 let videoMatch = playerHtml.match(/(?:const|var)\s+mysvg\s*=\s*'([^']+)'/);
                 if (!videoMatch) videoMatch = playerHtml.match(/art\.url\s*=\s*["']([^"']+)["']/);
                 if (videoMatch) {
@@ -210,11 +207,11 @@ var rule = {
             }
         }
 
-        // 步骤3: 尝试正则提取 url: '...' 或 url: "..."
+        // 步骤3: url 正则
         let urlMatch2 = html.match(/url["\s:=]+['"]([^'"]+\.(?:m3u8|mp4)[^'"]*)['"]/);
         if (urlMatch2) return { parse: 0, url: urlMatch2[1] };
 
-        // 步骤4: 最后交给解析接口
+        // 步骤4: 解析接口
         return { parse: 1, url: input, header: { 'User-Agent': 'Mozilla/5.0' } };
     }
 };
