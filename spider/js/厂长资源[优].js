@@ -146,31 +146,23 @@ var rule = {
     },
 
     搜索: async function () {
-        let { input, pdfa, pdfh, pd } = this;
+        let { input, pdfa, pdfh, pd, KEY } = this;
         let html = await request(input);
         let d = [];
         let items = pdfa(html, '.search_list li');
-        if (!items.length) items = pdfa(html, '.bt_img li');
-        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img li');
-        if (!items.length) {
-            let allItems = pdfa(html, 'li');
-            items = [];
-            for (let i = 0; i < allItems.length; i++) {
-                if (pdfh(allItems[i], 'h3.dytit&&a&&Text') || pdfh(allItems[i], '.dytit&&a&&Text')) {
-                    items.push(allItems[i]);
-                }
-            }
-        }
+        if (!items.length) items = pdfa(html, '.bt_img ul li');
+        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         items.slice(0, 20).forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
-            let pic = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
-            let remarks = pdfh(it, '.inzhuy&&Text') || pdfh(it, '.jidi&&Text') || '';
-            if (!link || !name) return;
-            if (!link.startsWith('http')) link = this.host + link;
-            d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
+            if (link && !link.startsWith('http')) link = this.host + link;
+            d.push({
+                vod_id: link,
+                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
+                vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
+                vod_remarks: pdfh(it, '.inzhuy&&Text') || pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || ''
+            });
         });
-        return setResult(d);
+        return setResult(d.filter(x => x.vod_id && x.vod_name));
     },
 
     lazy: async function (flag, id, flags) {
