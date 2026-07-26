@@ -76,7 +76,9 @@ var rule = {
         };
     },
 
-    搜索: async function (wd, pg) {
+    搜索: async function () {
+        const { input, KEY } = this;
+        const wd = KEY || (input && new URL(input).searchParams.get('kw')) || '';
         const panTypes = (this.pan_types || '').split(',').map(s => s.trim()).filter(Boolean);
         const priorityTypes = panTypes.map(t => nameToApiType[t] || t);
         const apiUrl = `${this.host}/api/search?kw=${encodeURIComponent(wd)}`;
@@ -94,7 +96,12 @@ var rule = {
             }
         }
 
-        const data = JSON.parse(html);
+        let data;
+        try {
+            data = JSON.parse(html);
+        } catch (e) {
+            throw new Error(`API返回非JSON数据(可能是IP被限制或API变更): ${html.slice(0, 200)}`);
+        }
         if (!data || data.code !== 0) throw new Error(data?.message || '请求失败');
 
         const allItems = [];
