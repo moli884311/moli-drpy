@@ -561,6 +561,19 @@
       "ext": ""
     },
     {
+      "key": "drpyS_厂长资源[优]",
+      "name": "🏭{brand_name}┃厂长资源┃[优]",
+      "type": 4,
+      "api": "{api_host}/api/厂长资源[优]?pwd={api_pwd}",
+      "searchable": 2,
+      "filterable": 1,
+      "quickSearch": 0,
+      "title": "厂长资源[优]",
+      "类型": "影视",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
       "key": "catvod_荐片",
       "name": "📽️{brand_name}┃荐片┃",
       "type": 3,
