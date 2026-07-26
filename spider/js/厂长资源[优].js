@@ -177,7 +177,7 @@ var rule = {
             let remarks = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '';
             if (!link || !name) return;
             if (!link.startsWith('http')) link = this.host + link;
-            d.push({ title: name, url: link, pic_url: pic, desc: remarks });
+            d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
         });
         return setResult(d);
     },
