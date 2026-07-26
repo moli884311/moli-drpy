@@ -27,7 +27,7 @@ globalThis.aggConfig = {
     百度: { host: 'https://api.jkyai.top', url1: '/API/bddjss.php?name=fyclass&page=fypage', url2: '/API/bddjss.php?id=fyid', search: '/API/bddjss.php?name=**&page=fypage' },
     甜圈: { host: 'https://mov.cenguigui.cn', url1: '/duanju/api.php?classname', url2: '/duanju/api.php?book_id', search: '/duanju/api.php?name' },
     锦鲤: { host: 'https://api.jinlidj.com', search: '/api/search', url2: '/api/detail' },
-    番茄: { host: 'https://reading.snssdk.com', url1: '/reading/bookapi/bookmall/cell/change/v', url2: 'https://fqgo.52dns.cc/catalog', search: 'https://fqgo.52dns.cc/search' },
+     番茄: { host: 'https://reading.snssdk.com', url1: '/reading/bookapi/bookmall/cell/change/v', url2: 'https://fqgo.52dns.cc/catalog', url2_fallback: 'https://fanqienovel.com/api/reader/directory/detail', search: 'https://fqgo.52dns.cc/search', search_fallback: 'https://fanqienovel.com/api/goodreads/v1/search/book' },
     星芽: { host: 'https://app.whjzjx.cn', url1: '/cloud/v2/theater/home_page?theater_class_id', url2: '/v2/theater_parent/detail', search: '/v3/search', loginUrl: 'https://u.shytkjgs.com/user/v1/account/login' },
     西饭: { host: 'https://xifan-api-cn.youlishipin.com', url1: '/xifan/drama/portalPage', url2: '/xifan/drama/getDuanjuInfo', search: '/xifan/search/getSearchList' },
     软鸭: { host: 'https://api.xingzhige.com', url1: '/API/playlet', search: '/API/playlet' },
@@ -198,10 +198,13 @@ var rule = {
           break;
         }
         case '软鸭':
-          (await fetch(`${plat.host}${plat.url1}/?keyword=${encodeURIComponent(area)}&page=${MY_PAGE}`)).data.forEach(item => {
+          try {
             const purl = `${item.title}@${item.cover}@${item.author}@${item.type}@${item.desc}@${item.book_id}`;
-            d.push({ title: item.title, img: item.cover, desc: item.type, content: item.author, url: `软鸭@${encodeURIComponent(purl)}` });
-          });
+            (await fetch(`${plat.host}${plat.url1}/?keyword=${encodeURIComponent(area)}&page=${MY_PAGE}`)).data.forEach(item => {
+              const purl = `${item.title}@${item.cover}@${item.author}@${item.type}@${item.desc}@${item.book_id}`;
+              d.push({ title: item.title, img: item.cover, desc: item.type, content: item.author, url: `软鸭@${encodeURIComponent(purl)}` });
+            });
+          } catch (e) { log(`软鸭一级失败(${area}): ${e.message}`); }
           break;
         case '七猫': {
           let signStr = `operation=1playlet_privacy=1tag_id=${area}${cfg.keys}`;
@@ -214,8 +217,10 @@ var rule = {
           break;
         }
         case '围观':
-          (await fetch(`${plat.host}${plat.search}`, { method: 'POST', body: JSON.stringify({ "audience": "全部受众", "page": MY_PAGE, "pageSize": 30, "searchWord": "", "subject": "全部主题" }) })).data.forEach(it =>
-            d.push({ title: it.title, img: it.vertPoster, year: it.publishDate?.toString() || '', desc: `集数:${it.episodeCount} 播放:${it.viewCount}`, remarks: it.description, url: `围观@${it.oneId}` }));
+          try {
+            (await fetch(`${plat.host}${plat.search}`, { method: 'POST', body: JSON.stringify({ "audience": "全部受众", "page": MY_PAGE, "pageSize": 30, "searchWord": "", "subject": "全部主题" }) })).data.forEach(it =>
+              d.push({ title: it.title, img: it.vertPoster, year: it.publishDate?.toString() || '', desc: `集数:${it.episodeCount} 播放:${it.viewCount}`, remarks: it.description, url: `围观@${it.oneId}` }));
+          } catch (e) { log(`围观一级失败: ${e.message}`); }
           break;
         case '红果':
           (await fetch(`${plat.host}${plat.url1.replace('fyclass', area).replace('fypage', MY_PAGE)}`)).data.forEach(item =>
@@ -282,19 +287,32 @@ var rule = {
         };
         break;
       case '番茄':
-        const res4 = await fetch(`${plat.url2}?book_id=${id}`, { headers: cfg.headers.default });
-        const bookInfo = res4.data.book_info;
-        VOD = {
-          vod_id: bookInfo.book_id,
-          vod_name: bookInfo.book_name,
-          vod_type: bookInfo.tags,
-          vod_year: bookInfo.create_time,
-          vod_pic: bookInfo.thumb_url || bookInfo.audio_thumb_uri,
-          vod_content: bookInfo.abstract || bookInfo.book_abstract_v2,
-          vod_remarks: bookInfo.sub_info || `更新至${res4.data.item_data_list.length}集`,
-          vod_play_from: '番茄短剧',
-          vod_play_url: res4.data.item_data_list.map(item => `${item.title}$${item.item_id}`).join('#')
-        };
+        try {
+          const res4 = await fetch(`${plat.url2}?book_id=${id}`, { headers: cfg.headers.default });
+          const bookInfo = res4.data.book_info;
+          VOD = {
+            vod_id: bookInfo.book_id,
+            vod_name: bookInfo.book_name,
+            vod_type: bookInfo.tags,
+            vod_year: bookInfo.create_time,
+            vod_pic: bookInfo.thumb_url || bookInfo.audio_thumb_uri,
+            vod_content: bookInfo.abstract || bookInfo.book_abstract_v2,
+            vod_remarks: bookInfo.sub_info || `更新至${res4.data.item_data_list.length}集`,
+            vod_play_from: '番茄短剧',
+            vod_play_url: res4.data.item_data_list.map(item => `${item.title}$${item.item_id}`).join('#')
+          };
+        } catch (e) {
+          log(`番茄二级(${plat.url2})失败: ${e.message}`);
+          try {
+            const res4b = await fetch(`${plat.url2_fallback}?bookId=${id}`);
+            const items = res4b.data?.chapterListWithVolume?.flatMap(v => v.itemIds || []) || res4b.data?.allItemIds || [];
+            VOD = {
+              vod_id: id, vod_name: id, vod_pic: '',
+              vod_play_from: '番茄短剧(备用)',
+              vod_play_url: items.map((itemId, idx) => `第${idx+1}集$${itemId}`).join('#') || '无数据$#'
+            };
+          } catch (e2) { log(`番茄备用API也失败: ${e2.message}`); }
+        }
         break;
       case '星芽':
         const res5 = JSON.parse(await request(id, { headers: this.xingya_headers }));
@@ -328,18 +346,22 @@ var rule = {
         break;
       }
       case '软鸭': {
-        const did = decodeURIComponent(id);
-        const [title, img, author, type, desc, book_id] = did.split('@');
-        const res7 = await fetch(`${plat.host}${plat.url1}/?book_id=${book_id}`);
-        VOD = {
-          vod_name: title,
-          vod_pic: img,
-          vod_actor: author,
-          vod_remarks: type,
-          vod_content: desc,
-          vod_play_from: '软鸭短剧',
-          vod_play_url: (res7.data?.video_list || []).map(ep => `${ep.title}$${ep.video_id}`).join('#')
-        };
+        try {
+          const did = decodeURIComponent(id);
+          const [title, img, author, type, desc, book_id] = did.split('@');
+          const res7 = await fetch(`${plat.host}${plat.url1}/?book_id=${book_id}`);
+          VOD = {
+            vod_name: title,
+            vod_pic: img,
+            vod_actor: author,
+            vod_remarks: type,
+            vod_content: desc,
+            vod_play_from: '软鸭短剧',
+            vod_play_url: (res7.data?.video_list || []).map(ep => `${ep.title}$${ep.video_id}`).join('#')
+          };
+        } catch (e) {
+          log(`软鸭二级失败: ${e.message}`);
+        }
         break;
       }
       case '七猫': {
@@ -359,16 +381,20 @@ var rule = {
         break;
       }
       case '围观': {
-        const res10 = await fetch(`${plat.host}${plat.url2}?oneId=${id}&page=1&pageSize=1000`);
-        const firstEpisode = res10.data[0];
-        VOD = {
-          vod_name: firstEpisode.title,
-          vod_pic: firstEpisode.vertPoster,
-          vod_remarks: `共${res10.data.length}集`,
-          vod_content: `播放量:${firstEpisode.collectionCount} 评论:${firstEpisode.commentCount}`,
-          vod_play_from: '围观短剧',
-          vod_play_url: res10.data.map(episode => `${episode.title}第${episode.playOrder}集$${episode.playSetting}`).join('#')
-        };
+        try {
+          const res10 = await fetch(`${plat.host}${plat.url2}?oneId=${id}&page=1&pageSize=1000`);
+          const firstEpisode = res10.data[0];
+          VOD = {
+            vod_name: firstEpisode.title,
+            vod_pic: firstEpisode.vertPoster,
+            vod_remarks: `共${res10.data.length}集`,
+            vod_content: `播放量:${firstEpisode.collectionCount} 评论:${firstEpisode.commentCount}`,
+            vod_play_from: '围观短剧',
+            vod_play_url: res10.data.map(episode => `${episode.title}第${episode.playOrder}集$${episode.playSetting}`).join('#')
+          };
+        } catch (e) {
+          log(`围观二级失败: ${e.message}`);
+        }
         break;
       }
       case '红果':
@@ -409,7 +435,14 @@ var rule = {
             results = (JSON.parse(await request(plat.host + plat.search, { method: 'POST', body: JSON.stringify({ page: MY_PAGE, limit, type_id: '', year: '', keyword: KEY }), timeout }))).data?.list?.map(it => ({ title: it.vod_name || '未知短剧', img: it.vod_pic || '', year: it.vod_year || '未知', desc: `锦鲤短剧 | ${it.vod_total || 0}集`, url: `锦鲤@${it.vod_id}` })) || [];
             break;
           case '番茄':
-            results = (JSON.parse(await request(`${plat.search}?keyword=${encodeURIComponent(KEY)}&page=${MY_PAGE}`, { timeout }))).data?.map(it => ({ title: it.title || '未知标题', img: it.cover || '', year: '未知', desc: `番茄短剧 | ${it.sub_title || '无简介'}`, url: `番茄@${it.series_id || ''}` })) || [];
+            try {
+              results = (JSON.parse(await request(`${plat.search}?keyword=${encodeURIComponent(KEY)}&page=${MY_PAGE}`, { timeout }))).data?.map(it => ({ title: it.title || '未知标题', img: it.cover || '', year: '未知', desc: `番茄短剧 | ${it.sub_title || '无简介'}`, url: `番茄@${it.series_id || ''}` })) || [];
+            } catch (e) {
+              log(`番茄搜索失败(${plat.search}): ${e.message}`);
+              try {
+                results = (JSON.parse(await request(`${plat.search_fallback}?keyword=${encodeURIComponent(KEY)}&page=${MY_PAGE}`, { timeout }))).data?.book_list?.map(it => ({ title: it.book_name || it.title || '未知', img: it.thumb_url || '', desc: `番茄短剧`, url: `番茄@${it.book_id || ''}` })) || [];
+              } catch (e2) { log(`番茄备用搜索也失败: ${e2.message}`); }
+            }
             break;
           case '星芽': {
             const res = JSON.parse(await request(plat.host + plat.search, { method: 'POST', headers: this.xingya_headers, body: JSON.stringify({ text: KEY }), timeout }));
@@ -426,10 +459,12 @@ var rule = {
             break;
           }
           case '软鸭':
-            results = (JSON.parse(await request(`${plat.host}${plat.search}/?keyword=${encodeURIComponent(KEY)}&page=${MY_PAGE}`, { headers: cfg.headers.default, timeout }))).data?.map(item => {
-              const purl = `${item.title}@${item.cover}@${item.author}@${item.type}@${item.desc}@${item.book_id}`;
-              return { title: item.title, img: item.cover, year: '未知', desc: `软鸭短剧 | ${item.type || '无分类'}`, url: `软鸭@${encodeURIComponent(purl)}` };
-            }) || [];
+            try {
+              results = (JSON.parse(await request(`${plat.host}${plat.search}/?keyword=${encodeURIComponent(KEY)}&page=${MY_PAGE}`, { headers: cfg.headers.default, timeout }))).data?.map(item => {
+                const purl = `${item.title}@${item.cover}@${item.author}@${item.type}@${item.desc}@${item.book_id}`;
+                return { title: item.title, img: item.cover, year: '未知', desc: `软鸭短剧 | ${item.type || '无分类'}`, url: `软鸭@${encodeURIComponent(purl)}` };
+              }) || [];
+            } catch (e) { log(`软鸭搜索失败: ${e.message}`); }
             break;
           case '七猫': {
             let signStr = `operation=2playlet_privacy=1search_word=${KEY}${cfg.keys}`;
@@ -440,7 +475,9 @@ var rule = {
             break;
           }
           case '围观':
-            results = (JSON.parse(await request(`${plat.host}${plat.search}`, { method: 'POST', body: JSON.stringify({ "audience": "", "page": MY_PAGE, "pageSize": limit, "searchWord": KEY, "subject": "" }), timeout }))).data?.map(it => ({ title: it.title || '未知标题', img: it.vertPoster || '', year: it.publishDate?.toString() || '', desc: `围观短剧 | 集数:${it.episodeCount || 0} 播放:${it.viewCount || 0}`, remarks: it.description || '', url: `围观@${it.oneId || ''}` })) || [];
+            try {
+              results = (JSON.parse(await request(`${plat.host}${plat.search}`, { method: 'POST', body: JSON.stringify({ "audience": "", "page": MY_PAGE, "pageSize": limit, "searchWord": KEY, "subject": "" }), timeout }))).data?.map(it => ({ title: it.title || '未知标题', img: it.vertPoster || '', year: it.publishDate?.toString() || '', desc: `围观短剧 | 集数:${it.episodeCount || 0} 播放:${it.viewCount || 0}`, remarks: it.description || '', url: `围观@${it.oneId || ''}` })) || [];
+            } catch (e) { log(`围观搜索失败: ${e.message}`); }
             break;
           case '红果':
             results = (JSON.parse(await request(`${plat.host}${plat.search.replace('**', encodeURIComponent(KEY)).replace('fypage', MY_PAGE)}`, { headers: this.headers, timeout }))).data?.map(item => ({ title: item.title || '未知标题', img: item.cover || '', year: '未知', desc: `红果短剧 | ${item.total || 0}集`, url: `红果@${item.book_id || ''}` })) || [];
@@ -483,10 +520,17 @@ var rule = {
       return { parse: 0, url: JSON.parse(match[1]).url };
     }
     if (/番茄/.test(flag)) {
-      const res = JSON.parse(await request(`https://fqgo.52dns.cc/video?item_ids=${input}`, { headers: cfg.headers.default }));
-      const videoModel = res.data?.[input] ? JSON.parse(res.data[input].video_model) : null;
-      const url = videoModel?.video_list?.video_1 ? atob(videoModel.video_list.video_1.main_url) : '';
-      return { parse: 0, url };
+      try {
+        const res = JSON.parse(await request(`https://fqgo.52dns.cc/video?item_ids=${input}`, { headers: cfg.headers.default }));
+        const videoModel = res.data?.[input] ? JSON.parse(res.data[input].video_model) : null;
+        const url = videoModel?.video_list?.video_1 ? atob(videoModel.video_list.video_1.main_url) : '';
+        if (url) return { parse: 0, url };
+      } catch (e) { log(`番茄播放(fqgo)失败: ${e.message}`); }
+      try {
+        const res = JSON.parse(await request(`https://fanqienovel.com/api/reader/directory/detail?bookId=${input}`, { headers: cfg.headers.default }));
+        return { parse: 0, url: '' };
+      } catch (e2) { log(`番茄备用播放也失败: ${e2.message}`); }
+      return { parse: 0, url: input };
     }
     if (/软鸭/.test(flag)) {
       const res = JSON.parse(await request(`${plat.软鸭.host}/API/playlet/?video_id=${input}&quality=1080p`, { headers }));
