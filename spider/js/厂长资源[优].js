@@ -11,7 +11,7 @@
 var rule = {
     title: '厂长资源[优]',
     host: 'https://www.4kcz.com',
-    url: '/fyclass/page/fypage',
+    url: '/fyclass',
     searchUrl: '/boss1O1?q=**',
     searchable: 2,
     quickSearch: 0,
@@ -39,35 +39,32 @@ var rule = {
         if (!items.length) items = pdfa(html, '.bt_img ul li');
         items.slice(0, 18).forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            d.push({
-                title: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || '',
-                img: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
-                desc: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '',
-                url: link
-            });
+            let title = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || '';
+            let img = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
+            let desc = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '';
+            if (!link || !title) return;
+            d.push({ title, img, desc, url: link });
         });
-        return setResult(d.filter(x => x.url && x.title));
+        return setResult(d);
     },
 
     一级: async function () {
         let { input, pdfa, pdfh, pd } = this;
         let html = await request(input);
         let d = [];
-        // 匹配 taxonomy 归档页 (含 .bt_img) 和搜索页
         let items = pdfa(html, '.bt_img ul li');
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         if (!items.length) items = pdfa(html, '.search_list ul li');
         items.forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            if (link && !link.startsWith('http')) link = this.host + link;
-            d.push({
-                vod_id: link,
-                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
-                vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
-                vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || pdfh(it, '.qb&&Text') || ''
-            });
+            let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
+            let pic = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
+            let remarks = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || pdfh(it, '.qb&&Text') || '';
+            if (!link || !name) return;
+            if (!link.startsWith('http')) link = this.host + link;
+            d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
         });
-        return setResult(d.filter(x => x.vod_id && x.vod_name));
+        return setResult(d);
     },
 
     二级: async function (ids) {
@@ -149,7 +146,7 @@ var rule = {
     },
 
     搜索: async function () {
-        let { input, pdfa, pdfh, pd, KEY } = this;
+        let { input, pdfa, pdfh, pd } = this;
         let html = await request(input);
         let d = [];
         let items = pdfa(html, '.search_list ul li');
@@ -157,15 +154,14 @@ var rule = {
         if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
         items.slice(0, 20).forEach(it => {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
-            if (link && !link.startsWith('http')) link = this.host + link;
-            d.push({
-                vod_id: link,
-                vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
-                vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
-                vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || ''
-            });
+            let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
+            let pic = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
+            let remarks = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '';
+            if (!link || !name) return;
+            if (!link.startsWith('http')) link = this.host + link;
+            d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
         });
-        return setResult(d.filter(x => x.vod_id && x.vod_name));
+        return setResult(d);
     },
 
     lazy: async function (flag, id, flags) {
