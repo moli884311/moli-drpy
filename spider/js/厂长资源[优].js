@@ -156,9 +156,7 @@ var rule = {
 
     搜索: async function () {
         let { input, pdfa, pdfh, pd, KEY } = this;
-        console.log('===厂长搜索被调用===', input);
         let html = await request(input);
-        console.log('===HTML长度===', html.length);
         let d = [];
         let items = pdfa(html, '.search_list li');
         if (!items.length) items = pdfa(html, '.bt_img ul li');
@@ -170,10 +168,9 @@ var rule = {
                 vod_id: link,
                 vod_name: pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '',
                 vod_pic: pd(it, 'img&&data-original') || pd(it, 'img&&src') || '',
-                vod_remarks: pdfh(it, '.inzhuy&&Text') || pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || ''
+                vod_remarks: pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || pdfh(it, '.inzhuy&&Text') || ''
             });
         });
-        console.log('===搜索结果条数===', d.length, JSON.stringify(d.slice(0, 2)));
         return d.filter(x => x.vod_id && x.vod_name);
     },
 
