@@ -47,16 +47,18 @@ async function handleSearch(query) {
 async function handleCatalog(query) {
   const bookId = query.book_id || query.bookId || '';
   const raw = await fetchJSON(`https://fanqienovel.com/api/reader/directory/detail?bookId=${bookId}`);
-  console.log('catalog raw keys:', Object.keys(raw?.data || {}), 'item_data_list type:', typeof raw?.data?.item_data_list, Array.isArray(raw?.data?.item_data_list) ? `len=${raw.data.item_data_list.length}` : '');
-  const dd = raw?.data || {};
+  console.log('catalog raw keys:', Object.keys(dd), 'chapterListWithVolume:', Array.isArray(dd.chapterListWithVolume) ? dd.chapterListWithVolume.length : typeof dd.chapterListWithVolume);
 
-  // item_data_list 可能是数组或按卷分组的对象
+  // fanqienovel 实际返回: {chapterListWithVolume: [{volumeName, itemIds[]}], allItemIds: [], volumeNameList: []}
   let chapters = [];
-  const idl = dd.item_data_list;
-  if (Array.isArray(idl)) {
-    chapters = idl;
-  } else if (idl && typeof idl === 'object') {
-    chapters = Object.values(idl).flat();
+  if (Array.isArray(dd.chapterListWithVolume)) {
+    for (const vol of dd.chapterListWithVolume) {
+      if (Array.isArray(vol.itemIds)) {
+        for (const id of vol.itemIds) {
+          chapters.push({ title: vol.volumeName || '', item_id: id });
+        }
+      }
+    }
   }
 
   return {
@@ -67,12 +69,9 @@ async function handleCatalog(query) {
         book_name: dd.book_info?.book_name || '',
         thumb_url: dd.book_info?.thumb_url || '',
         abstract: dd.book_info?.abstract || '',
-        sub_info: dd.book_info?.sub_info || '',
+        sub_info: `${chapters.length}集` || dd.book_info?.sub_info || '',
       },
-      item_data_list: chapters.map(it => ({
-        title: it.title || it.volume_name || '',
-        item_id: it.item_id
-      }))
+      item_data_list: chapters
     }
   };
 }
