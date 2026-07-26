@@ -119,9 +119,7 @@ var rule = {
         };
     },
 
-    搜索: async function () {
-        const { input, KEY } = this;
-        const wd = KEY || (input && new URL(input).searchParams.get('kw')) || '';
+    搜索: async function (wd, pg) {
         const panTypes = (this.pan_types || '').split(',').map(s => s.trim()).filter(Boolean);
         const allowedTypes = panTypes.map(t => nameToApiType[t] || t);
         const priorityApiTypes = panTypes.map(t => nameToApiType[t] || t);
@@ -140,12 +138,7 @@ var rule = {
             }
         }
 
-        let data;
-        try {
-            data = JSON.parse(html);
-        } catch (e) {
-            throw new Error(`API返回非JSON数据: ${html.slice(0, 200)}`);
-        }
+        const data = JSON.parse(html);
         if (data.code !== 0) throw new Error(data.message || '请求失败');
 
         const allImages = (data.data?.merged_by_type ? Object.values(data.data.merged_by_type).flat().flatMap(i => i.images || []) : []).filter(Boolean);
