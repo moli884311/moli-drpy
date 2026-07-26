@@ -15,7 +15,7 @@ let aliDownloadingCache = {};
 
 var rule = {
     title: '傻样[盘]',
-    host: 'http://xsayang.fun:12512',
+    host: 'http://xhban.xyz:20720',
     url: '/index.php/vod/show/id/fyfilter.html',
     filter_url: '{{fl.cateId}}{{fl.area}}{{fl.by or "/by/time"}}{{fl.class}}{{fl.lang or "/lang/国语"}}{{fl.letter}}/page/fypage{{fl.year}}',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',

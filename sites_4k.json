@@ -10,11 +10,9 @@
       "changeable": 1,
       "ext": {
         "site": [
-          "https://woog.nxog.fun",
           "https://woog.nxog.eu.org",
-          "https://woog.430520.xyz",
-          "https://woog.xn--dkw.xn--6qq986b3xl",
-          "https://ogkk.nxog.fun"
+          "https://woog.nxog.fun",
+          "https://ogkk.nxog.de5.net"
         ]
       },
       "timeout": 60
@@ -65,10 +63,11 @@
       "changeable": 1,
       "ext": {
         "site": [
-          "http://www.xiaocgege.shop",
-          "http://xiaocge.fun",
+          "http://tvpanpan.site",
           "http://feimo.fun",
-          "http://xiaocgege.shop"
+          "http://xiaocgege.shop",
+          "http://www.xiaocgege.shop",
+          "https://www.xiaocge.fun"
         ]
       },
       "timeout": 60
@@ -140,7 +139,8 @@
       "changeable": 1,
       "ext": {
         "site": [
-          "https://2xiaopan.fun ",
+          "https://www.2xiaopan.top",
+          "https://2xiaopan.top",
           "https://www.erxiaozhan.top",
           "https://www.2xiaozhan.top",
           "https://wexwp.cc"
@@ -159,7 +159,8 @@
       "changeable": 1,
       "ext": {
         "site": [
-          "http://38.76.197.172:16969"
+          "http://xhban.xyz:20720",
+          "http://154.222.27.33:20720"
         ]
       },
       "timeout": 60
