@@ -174,7 +174,7 @@ var rule = {
             });
         });
         console.log('===搜索结果条数===', d.length, JSON.stringify(d.slice(0, 2)));
-        return setResult(d.filter(x => x.vod_id && x.vod_name));
+        return d.filter(x => x.vod_id && x.vod_name);
     },
 
     lazy: async function (flag, id, flags) {
