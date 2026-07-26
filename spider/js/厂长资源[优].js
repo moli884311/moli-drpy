@@ -1,12 +1,3 @@
-/*
-@header({
-   searchable: 1,
-  filterable: 0,
-  quickSearch: 0,
-  title: '厂长资源[优]',
-  lang: 'ds'
-})
-*/
 
 var rule = {
     title: '厂长资源[优]',
@@ -159,8 +150,8 @@ var rule = {
         let html = await request(input);
         let d = [];
         let items = pdfa(html, '.search_list li');
-        if (!items.length) items = pdfa(html, '.bt_img ul li');
-        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img ul li');
+        if (!items.length) items = pdfa(html, '.bt_img li');
+        if (!items.length) items = pdfa(html, '.mi_btcon .bt_img li');
         if (!items.length) {
             let allItems = pdfa(html, 'li');
             items = [];
@@ -174,7 +165,7 @@ var rule = {
             let link = pd(it, 'h3.dytit&&a&&href') || pd(it, '.dytit&&a&&href') || pd(it, 'a&&href') || '';
             let name = pdfh(it, 'h3.dytit&&a&&Text') || pdfh(it, '.dytit&&a&&Text') || pdfh(it, 'a&&title') || pdfh(it, 'a&&Text') || '';
             let pic = pd(it, 'img&&data-original') || pd(it, 'img&&src') || '';
-            let remarks = pdfh(it, '.jidi&&span&&Text') || pdfh(it, '.jidi&&Text') || '';
+            let remarks = pdfh(it, '.inzhuy&&Text') || pdfh(it, '.jidi&&Text') || '';
             if (!link || !name) return;
             if (!link.startsWith('http')) link = this.host + link;
             d.push({ vod_id: link, vod_name: name, vod_pic: pic, vod_remarks: remarks });
