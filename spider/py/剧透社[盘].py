@@ -12,6 +12,7 @@ import sys
 import json
 import re
 import requests
+from urllib.parse import quote
 
 sys.path.append('..')
 from base.spider import Spider
@@ -25,17 +26,20 @@ class Spider(Spider):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    
+
     def getName(self):
         return self.name
-    
+
     def init(self, extend=""):
         self.session = requests.Session()
         self.headers_with_referer = self.headers.copy()
         self.headers_with_referer["Referer"] = f"{self.host}/"
         self.session.headers.update(self.headers_with_referer)
-        self.session.get(f"{self.host}/ju/", allow_redirects=True, timeout=self.timeout/1000)
-    
+        try:
+            self.session.get(f"{self.host}/ju/", allow_redirects=True, timeout=self.timeout / 1000)
+        except Exception:
+            pass
+
     def homeContent(self, filter):
         return {
             'class': [
@@ -49,37 +53,41 @@ class Spider(Spider):
                 {"type_name": "外剧", "type_id": "wj"}
             ]
         }
-    
+
     def categoryContent(self, tid, pg, filter, extend):
         result = {
             'list': [],
-            'page': pg,
+            'page': int(pg) if pg else 1,
             'pagecount': 9999,
             'limit': self.limit,
             'total': 999999
         }
+        pg = int(pg) if pg else 1
         url = f"{self.host}/{tid}/" if pg == 1 else f"{self.host}/{tid}/?page={pg}"
-            
-        response = self.session.get(url, allow_redirects=True, timeout=self.timeout/1000)
-        if response.status_code == 200:
-            videos = self._parse_video_list(response.text)
-            result['list'] = videos
-        
+
+        try:
+            response = self.session.get(url, allow_redirects=True, timeout=self.timeout / 1000)
+            response.encoding = 'utf-8'
+            if response.status_code == 200:
+                result['list'] = self._parse_video_list(response.text)
+        except Exception as e:
+            self.log(f"categoryContent error: {e}")
+
         return result
-    
+
     def _parse_video_list(self, html_text):
         videos = []
-        
+
         def build_full_url(href):
             if href.startswith("http"):
                 return href
             return f"{self.host}{href}" if href.startswith("/") else f"{self.host}/{href}"
-        
-        pattern = r'<li[^>]*>.*?<a[^>]*href="([^"]*)"[^>]*class="main"[^>]*>(.*?)</a>.*?</li>'
+
+        pattern = r'<li[^>]*>.*?<a[^>]*href="([^"]*)"[^>]*class="[^"]*main[^"]*"[^>]*>(.*?)</a>.*?</li>'
         for match in re.finditer(pattern, html_text, re.S):
             href = match.group(1)
             name = match.group(2).strip()
-            
+
             if href and name and href.startswith("/"):
                 cleaned_name = re.sub(r'^【[^】]*】', '', name).strip()
                 final_name = cleaned_name if cleaned_name else name
@@ -90,27 +98,34 @@ class Spider(Spider):
                     "vod_remarks": "",
                     "vod_content": final_name
                 })
-        
+
         return videos
-    
+
     def detailContent(self, array):
         result = {'list': []}
-        if array:
-            vod_id = array[0]
-            detail_url = vod_id if vod_id.startswith("http") else f"{self.host}{vod_id}"
-            
-            response = self.session.get(detail_url, allow_redirects=True, timeout=self.timeout/1000)
+        if not array:
+            return result
+
+        vod_id = array[0]
+        detail_url = vod_id if vod_id.startswith("http") else f"{self.host}{vod_id}"
+
+        try:
+            response = self.session.get(detail_url, allow_redirects=True, timeout=self.timeout / 1000)
+            response.encoding = 'utf-8'
             if response.status_code == 200:
                 vod = self._parse_detail_page(response.text, detail_url)
                 if vod:
                     result['list'] = [vod]
+        except Exception as e:
+            self.log(f"detailContent error: {e}")
+
         return result
-    
+
     def _parse_detail_page(self, html_text, detail_url):
         title_match = re.search(r'<h1[^>]*>(.*?)</h1>', html_text, re.S)
         title = title_match.group(1).strip() if title_match else "未知标题"
         title = re.sub(r'^【[^】]+】', '', title).strip() or "未知标题"
-        
+
         play_url_list = []
         link_pattern = r'<a[^>]*href="([^"]*)"[^>]*>.*?</a>'
         for match in re.finditer(link_pattern, html_text, re.S):
@@ -119,10 +134,10 @@ class Spider(Spider):
                 play_url_list.append(f"百度网盘$push://{href}")
             elif href and "pan.quark.cn" in href:
                 play_url_list.append(f"夸克网盘$push://{href}")
-        
+
         play_from = "剧透社" if play_url_list else "无资源"
         play_url = "#".join(play_url_list) if play_url_list else "暂无资源$#"
-        
+
         return {
             "vod_id": detail_url,
             "vod_name": title,
@@ -132,31 +147,38 @@ class Spider(Spider):
             "vod_play_from": play_from,
             "vod_play_url": play_url
         }
-    
+
     def searchContent(self, key, quick, pg='1'):
-        url = f"{self.host}/search/?keyword={key}"
-        response = self.session.get(url, allow_redirects=True, timeout=self.timeout/1000)
-        if response.status_code == 200:
-            return {'list': self._parse_video_list(response.text)}
-        
+        url = f"{self.host}/search/?keyword={quote(key)}"
+        try:
+            response = self.session.get(url, allow_redirects=True, timeout=self.timeout / 1000)
+            response.encoding = 'utf-8'
+            if response.status_code == 200:
+                return {'list': self._parse_video_list(response.text)}
+        except Exception as e:
+            self.log(f"searchContent error: {e}")
+
         return {'list': []}
-    
+
     def playerContent(self, flag, id, vipFlags):
         return {
             "parse": 0,
             "playUrl": "",
             "url": id,
-            "header": json.dumps(self.headers)
+            "header": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Referer": self.host
+            }
         }
-    
+
     def homeVideoContent(self):
         return {"list": []}
-    
+
     def isVideoFormat(self, url):
         return False
-    
+
     def localProxy(self, url):
         return None
-    
+
     def manualVideoCheck(self, url):
         return None
