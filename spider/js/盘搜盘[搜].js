@@ -100,7 +100,7 @@ var rule = {
         try {
             data = JSON.parse(html);
         } catch (e) {
-            throw new Error(`API返回非JSON数据(可能是IP被限制或API变更): ${html.slice(0, 200)}`);
+            return [{ vod_id: 'error', vod_name: '搜索接口暂时不可用(Cloudflare)', vod_pic: '', vod_remarks: 'pansou返回了防护页，稍后重试' }];
         }
         if (!data || data.code !== 0) throw new Error(data?.message || '请求失败');
 
