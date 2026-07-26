@@ -47,6 +47,7 @@ async function handleSearch(query) {
 async function handleCatalog(query) {
   const bookId = query.book_id || query.bookId || '';
   const raw = await fetchJSON(`https://fanqienovel.com/api/reader/directory/detail?bookId=${bookId}`);
+  console.log('catalog raw keys:', Object.keys(raw?.data || {}), 'item_data_list type:', typeof raw?.data?.item_data_list, Array.isArray(raw?.data?.item_data_list) ? `len=${raw.data.item_data_list.length}` : '');
   const dd = raw?.data || {};
 
   // item_data_list 可能是数组或按卷分组的对象
@@ -115,6 +116,7 @@ const server = http.createServer(async (req, res) => {
     else if (path === '/catalog') result = await handleCatalog(q);
     else if (path === '/video') result = await handleVideo(q);
     else if (path === '/health') result = { ok: true, time: Date.now() };
+    else if (path === '/debug') result = await fetchJSON(q.url || 'https://fanqienovel.com/api/reader/directory/detail?bookId=7076174298628313124');
     else { res.writeHead(404); return res.end(JSON.stringify({ error: '未知接口' })); }
     res.end(JSON.stringify(result));
   } catch (e) {
