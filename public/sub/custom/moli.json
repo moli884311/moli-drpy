@@ -415,6 +415,18 @@
       "ext": ""
     },
     {
+      "key": "drpyS_盘搜盘[搜]",
+      "name": "🔎{brand_name}┃盘搜盘┃[搜]",
+      "type": 4,
+      "api": "{api_host}/api/盘搜盘[搜]?pwd={api_pwd}",
+      "searchable": 1,
+      "filterable": 0,
+      "quickSearch": 1,
+      "title": "盘搜盘[搜]",
+      "lang": "ds",
+      "ext": ""
+    },
+    {
       "key": "push_agent",
       "name": "📨{brand_name}┃push_agent┃",
       "type": 4,
