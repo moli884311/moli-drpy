@@ -24,7 +24,7 @@ var rule = {
     play_parse: true,
     // 使用首页"更多"链接对应的 taxonomy 归档页 (有 .bt_img 结构)
     class_name: '电影&国产剧&美剧&韩剧&日剧&追番(动漫)',
-    class_url: 'movie_bt_series/dyy&movie_bt_series/guochanju&movie_bt_series/mj&movie_bt_series/hj&movie_bt_series/rj&movie_bt_view_cat/fjj',
+    class_url: 'zuixindianying&movie_bt_series/guochanju&movie_bt_series/mj&movie_bt_series/hj&movie_bt_series/rj&movie_bt_view_cat/fjj',
 
     预处理: async function () {
         return [];
