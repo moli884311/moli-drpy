@@ -1,7 +1,7 @@
 /*
 @header({
   searchable: 2,
-  filterable: 1,
+  filterable: 0,
   quickSearch: 0,
   title: '厂长资源[优]',
   lang: 'ds'
@@ -15,7 +15,7 @@ var rule = {
     searchUrl: '/boss1O1?q=**',
     searchable: 2,
     quickSearch: 0,
-    filterable: 1,
+    filterable: 0,
     filter: 'H4sIAAAAAAAAA+2WUW/TMBSF/wvPSCiOc+v8nleQJm1CU6chRtkDQi5xGotgT0k6jQnx35GddemGEKMPE9r2kEo+9vnsa/fc2GkUMUYRn3Tf/mXe+5rn/c1ocmNGo58e+pgZ/CBuBzXGKX3ov9jO4ve5v55q0dA3mvbuHxylOC5HRHWk8bId71gN1hnsRHCykh2Gg4LmGsW8ALawtoLXu4jH28bFni5shK+WOGkmqJwKAcfJ8K0AR6mm4MBcEhsp0FLBw4aNn85r6f8uRyvnCUnfnK8EHCkcTE4qZicr9gVHioKDDfWXHcghhkNEM8tSRHojHKdlN88oxMqS/pXDSpu3ASm8jBEoj+JVs7dCO7w2U4tCYxTn+FJpe2kB71hFjx8rhWNwPPkA4N6mGyXMNVp1cW5r/pF2YRxRVmUnGf1/lwvjeHT1N/LT/gM+0j+AZ2gBQh3hQRkkbAj2NsEfNV1E8Y50L+7BPMmzA/uOf8P2e3H9Vg6EDWbL83Y1f99kMf+1n6EHLhQvphN++bGcb74m08ffP23yj9v8mxeDR60Zj9pRN7RtVswTmiLshH7FVrCbPfeHJ8vV6Yq8h7Woz3nx3+7lHrsh2nESrPTWuj/TJUO+z0skQ/Bz8GkYEvAUeO1GBo5nlDtAp4TpJIIQCa4gE0aqJNVE8F4KPSsjS0kmigZKp4NkUCgbS1JKk0iZRLJUSWqBB1KIQpFOiSSFkPIM8hCSj2NU4hgT0ZVCuq6ohqRU9JOkljJN0bBY4ZWS9BFNC6UnmtGQH2STBP8BywE2YC4HAAA=',
     filter_def: {},
     headers: {
