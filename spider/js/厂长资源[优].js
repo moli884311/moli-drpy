@@ -22,6 +22,7 @@ var rule = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Cookie': 'sl-session=MTc2Mzk3NDIxMHxOd3dBTkV4RFJVVkZSVUpOUTFSRFVrVk5RVFZDVFZSRU5EZEdSVU5HTkVWQlFrVkJPUT09fN0Q_TMSKpgs5iBkEDG0VfBspm0LF9Ky2s4nGZz_slCz; wordpress_logged_in_d9242bd52cdc2a10321ff2c15b090da9=bingot%7C1766539951%7CCuNRhcQm3tWnZGWwF6qApg33pNexMpOhqHv8WtkFxDy%7Ca17041373c5d59e325f41c4fff76c8c63c4e8bcd63860b7ab06d9cc55d9dc97d3; myannoun=1',
         'Referer': 'https://www.4kcz.com/'
+    },
     timeout: 15000,
     play_parse: true,
     // 使用首页"更多"链接对应的 taxonomy 归档页 (有 .bt_img 结构)
