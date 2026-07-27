@@ -1,9 +1,14 @@
 import { performance } from 'perf_hooks';
 const startTime = performance.now();
 
-import * as fastlogger from './controllers/fastlogger.js'
+import { fileURLToPath } from 'url';
 import path from 'path';
 import os from 'os';
+import qs from 'qs';
+import * as fastlogger from './controllers/fastlogger.js'
+import { PROJECT_ROOT } from './utils/pathHelper.js';
+import { validateBasicAuth, validatePwd, validateJs, validatHtml } from './utils/api_validate.js';
+import { startAllPlugins } from './utils/pluginManager.js';
 // 注册自定义import钩子
 import './utils/esm-register.mjs';
 // 引入python守护进程
