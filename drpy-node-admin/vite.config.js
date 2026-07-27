@@ -36,6 +36,7 @@ export default defineConfig(({ command, mode }) => {
     // 开发服务器配置
     server: {
       port: 5174,
+      allowedHosts: ['.monkeycode-ai.online'],
       proxy: {
         // 所有 API 请求代理到 drpy-node
         '/api': {

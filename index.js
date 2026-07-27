@@ -75,8 +75,40 @@ fastify.addHook('onClose', async () => {
     await onClose();
 });
 
+// Cookie 解析工具
+function parseCookies(cookieHeader) {
+    const cookies = {};
+    cookieHeader.split(';').forEach(part => {
+        const idx = part.indexOf('=');
+        if (idx > 0) cookies[part.slice(0, idx).trim()] = part.slice(idx + 1).trim();
+    });
+    return cookies;
+}
+
 // 给静态目录插件中心挂载basic验证
 fastify.addHook('preHandler', (req, reply, done) => {
+    // 首页认证（cookie-based，避免浏览器原生弹窗）
+    if (req.raw.url === '/' || req.raw.url === '/index.html' || req.raw.url.startsWith('/?')) {
+        const cookies = parseCookies(req.raw.headers.cookie || '');
+        const authCookie = cookies.drpy_auth;
+        const API_AUTH_NAME = process.env.API_AUTH_NAME || '';
+        const API_AUTH_CODE = process.env.API_AUTH_CODE || '';
+        if (!API_AUTH_NAME && !API_AUTH_CODE) {
+            done(); return;
+        }
+        if (authCookie) {
+            try {
+                const decoded = Buffer.from(authCookie, 'base64').toString();
+                const [name, code] = decoded.split(':');
+                if (name === API_AUTH_NAME && code === API_AUTH_CODE) {
+                    done(); return;
+                }
+            } catch (e) {}
+        }
+        reply.redirect('/login.html');
+        return;
+    }
+
     if (req.raw.url.startsWith('/apps/') || req.raw.url.startsWith('/api/admin/')) {
         if (req.raw.url.includes('clipboard-pusher/index.html')) {
             validateBasicAuth(req, reply, async () => {

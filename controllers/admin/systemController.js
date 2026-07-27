@@ -219,6 +219,26 @@ export async function getApiDocs(req, reply) {
                     description: "获取指定表的结构定义"
                 }
             ]
+        },
+        {
+            category: "自定义源管理",
+            endpoints: [
+                {
+                    path: "/api/admin/custom-sources",
+                    method: "GET",
+                    description: "获取所有已添加的自定义源列表（从 moli.json 读取）"
+                },
+                {
+                    path: "/api/admin/custom-sources/add",
+                    method: "POST",
+                    description: "添加一个新的自定义源到 moli.json，自动从源文件头部 meta 提取标题和搜索/筛选设置"
+                },
+                {
+                    path: "/api/admin/custom-sources/remove",
+                    method: "POST",
+                    description: "从 moli.json 中移除指定的自定义源"
+                }
+            ]
         }
     ];
 
