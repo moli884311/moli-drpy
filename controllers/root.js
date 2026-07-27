@@ -64,6 +64,24 @@ export default (fastify, options, done) => {
         }
     });
 
+    fastify.get('/login.html', async (request, reply) => {
+        const loginPath = path.join(options.rootDir, 'public', 'login.html');
+        if (existsSync(loginPath)) {
+            const content = readFileSync(loginPath, 'utf-8');
+            return reply.type('text/html;charset=utf-8').send(content);
+        }
+        reply.code(404).send({ error: 'Not Found' });
+    });
+
+    fastify.get('/download.html', async (request, reply) => {
+        const downloadPath = path.join(options.rootDir, 'public', 'download.html');
+        if (existsSync(downloadPath)) {
+            const content = readFileSync(downloadPath, 'utf-8');
+            return reply.type('text/html;charset=utf-8').send(content);
+        }
+        reply.code(404).send({ error: 'Not Found' });
+    });
+
     fastify.get('/health', async (request, reply) => {
         return {
             status: 'ok',
