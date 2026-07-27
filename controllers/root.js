@@ -74,13 +74,5 @@ export default (fastify, options, done) => {
             }
         };
     });
-
-    fastify.get('/api/admin/health', async (request, reply) => {
-        return {
-            status: 'ok',
-            timestamp: Date.now()
-        };
-    });
-
     done();
 };
