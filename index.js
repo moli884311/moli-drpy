@@ -3,14 +3,7 @@ const startTime = performance.now();
 
 import * as fastlogger from './controllers/fastlogger.js'
 import path from 'path';
-import {checkPhpAvailable} from './utils/phpEnv.js';
 import os from 'os';
-import qs from 'qs';
-import {fileURLToPath} from 'url';
-import {validateBasicAuth, validateJs, validatePwd, validatHtml} from "./utils/api_validate.js";
-import {startAllPlugins} from "./utils/pluginManager.js";
-import { PROJECT_ROOT } from "./utils/pathHelper.js";
-import {spawn} from 'child_process';
 // 注册自定义import钩子
 import './utils/esm-register.mjs';
 // 引入python守护进程
@@ -48,47 +41,8 @@ setTimeout(() => {
     pluginProcs = startAllPlugins(__dirname);
 }, 0);
 
-// PHP 解析服务器
-const PHP_PORT = 5758;
-let phpServer = null;
-
-function startPhpServer() {
-    try {
-        phpServer = spawn('php', ['-S', `127.0.0.1:${PHP_PORT}`, '-t', publicDir], {
-            stdio: 'pipe',
-            detached: false,
-        });
-        phpServer.stdout.on('data', (data) => {
-            fastlogger.fastify.log.info(`[php-server] ${data.toString().trim()}`);
-        });
-        phpServer.stderr.on('data', (data) => {
-            fastlogger.fastify.log.info(`[php-server] ${data.toString().trim()}`);
-        });
-        phpServer.on('error', (err) => {
-            fastlogger.fastify.log.warn(`[php-server] 启动失败: ${err.message}`);
-            phpServer = null;
-        });
-        phpServer.on('close', (code) => {
-            fastlogger.fastify.log.info(`[php-server] 进程退出，退出码: ${code}`);
-            phpServer = null;
-        });
-        fastlogger.fastify.log.info(`[php-server] 已启动解析服务器，端口: ${PHP_PORT}`);
-    } catch (err) {
-        fastlogger.fastify.log.warn(`[php-server] 启动失败: ${err.message}`);
-    }
-}
-
-function stopPhpServer() {
-    if (phpServer) {
-        phpServer.kill();
-        phpServer = null;
-    }
-}
-
 // 添加钩子事件
 fastify.addHook('onReady', async () => {
-    await checkPhpAvailable();
-    startPhpServer();
     const endTime = performance.now();
     console.log(`🚀 Server started in ${(endTime - startTime).toFixed(2)}ms`);
     try {
@@ -101,7 +55,6 @@ fastify.addHook('onReady', async () => {
 });
 
 async function onClose() {
-    stopPhpServer();
     try {
         await daemon.stopDaemon();
         fastify.log.info('Python守护进程已停止');
@@ -289,32 +242,6 @@ const stopWebSocketServer = async () => {
         wsApp.log.error(`停止WebSocket服务器失败:${err.message}`);
     }
 };
-
-// PHP 解析器代理 → 转发到本地 PHP 内置服务器
-fastify.get('/parser/*', async (request, reply) => {
-    try {
-        const targetUrl = `http://127.0.0.1:${PHP_PORT}${request.raw.url}`;
-        const httpModule = await import('http');
-        const httpsModule = await import('https');
-
-        const response = await new Promise((resolve, reject) => {
-            const get = targetUrl.startsWith('https') ? httpsModule.get : httpModule.get;
-            get(targetUrl, (res) => {
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, data }));
-            }).on('error', reject);
-        });
-
-        reply.code(response.statusCode);
-        if (response.headers['content-type']) {
-            reply.header('content-type', response.headers['content-type']);
-        }
-        reply.send(response.data);
-    } catch (err) {
-        reply.code(502).send(JSON.stringify({ code: 502, msg: '解析服务暂不可用' }));
-    }
-});
 
 // 启动服务
 const start = async () => {
