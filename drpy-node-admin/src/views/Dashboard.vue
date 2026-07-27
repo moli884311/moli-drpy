@@ -400,6 +400,13 @@ const restartService = async () => {
           </svg>
           <span class="text-sm font-medium">自定义源</span>
         </RouterLink>
+
+        <a href="/apps/cookie-butler/index.html" target="_blank" class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span class="text-sm font-medium">Cookie管理</span>
+        </a>
       </div>
     </div>
     </div>

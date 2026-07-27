@@ -162,6 +162,26 @@ onMounted(() => {
       </div>
 
       <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+
+
+        <!-- Info tooltip -->
+        <div class="dropdown dropdown-end">
+          <button tabindex="0" class="btn btn-ghost btn-sm text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <div tabindex="0" class="dropdown-content card shadow-lg bg-base-100 rounded-lg w-80 p-4 mt-2 z-50">
+            <h4 class="font-semibold text-sm mb-2">插件说明</h4>
+            <div class="space-y-3 text-xs text-gray-600 dark:text-gray-400">
+              <div><span class="font-semibold text-primary-600">req代理服务</span> — 提供全局 HTTP 请求代理，独立端口的本地代理服务器。当源站被墙或需要更换 IP 时启用。</div>
+              <div><span class="font-semibold text-primary-600">嗷呜适配代理</span> — 专为嗷呜影视数据源提供适配代理，自动处理请求头和格式转换。</div>
+              <div><span class="font-semibold text-primary-600">drplayer嗅探</span> — 视频链接嗅探服务，用于自动发现页面中的视频真实播放地址。</div>
+              <div><span class="font-semibold text-primary-600">go媒体代理</span> — Go 语言编写的高性能媒体流代理，支持视频流的实时转发和缓存。</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Unsaved changes indicator -->
         <div v-if="hasUnsavedChanges" class="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-500 rounded-lg text-sm border border-yellow-200 dark:border-yellow-700/50 mr-2 animate-pulse">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
