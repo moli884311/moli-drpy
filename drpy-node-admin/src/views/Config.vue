@@ -13,17 +13,29 @@ const selectedGroup = ref('全部')
 const configDescriptions = {
   // Cloud Storage
   quark_cookie: '夸克网盘 Cookie，用于夸克网盘资源解析',
-  quark_token_cookie: '夸克网盘 Token',
+  quark_token_cookie: '夸克网盘 Token（TV 端扫码获取）',
   uc_cookie: 'UC 网盘 Cookie',
-  uc_token_cookie: 'UC 网盘 Token',
+  uc_token_cookie: 'UC 网盘 Token（TV 端扫码获取）',
   ali_token: '阿里云盘 Token',
   ali_refresh_token: '阿里云盘刷新令牌',
   pikpak_token: 'PikPak Token',
   xun_username: '迅雷账号',
   xun_password: '迅雷密码',
-  xun_auth: '迅雷认证令牌(登录成功自动获取)',
+  xun_auth: '迅雷认证令牌（登录成功自动获取，无需手动填写）',
   yun_account: '移动云盘账号',
   yun_cookie: '移动云盘 Cookie',
+  cloud_account: '天翼云盘账号',
+  cloud_password: '天翼云盘密码',
+  cloud_cookie: '天翼云盘 Cookie',
+  pan_passport: '网盘账号（泛用型，用于各类网盘登录）',
+  pan_password: '网盘密码（泛用型）',
+  pan_auth: '网盘认证令牌（泛用型，登录成功自动获取）',
+  baidu_cookie: '百度网盘 Cookie',
+  panweb_cookie: '网盘搜索站 Cookie（预留字段，未实际使用）',
+  panpt_cookie: '网盘 PT 站 Cookie（预留字段，未实际使用）',
+  pan123_cookie: '123 云盘 Cookie（预留字段，未实际使用）',
+  wogg_cookie: '玩偶哥哥 wogg.net Cookie（预留字段，当前使用反代域名无需填写）',
+  kfzys_cookie: '酷放影视 Cookie（预留字段，未实际使用）',
 
   // Video Platform
   bili_cookie: 'Bilibili Cookie，用于 B站资源解析',
@@ -44,14 +56,6 @@ const configDescriptions = {
   allow_ftp_cache_clear: '允许 FTP 缓存清理 (0=禁用, 1=启用)',
   allow_webdav_cache_clear: '允许 WebDAV 缓存清理 (0=禁用, 1=启用)',
 
-  // Cloud Account
-  cloud_account: '云盘账号',
-  cloud_password: '云盘密码',
-  cloud_cookie: '云盘 Cookie',
-  pan_passport: '网盘账号',
-  pan_password: '网盘密码',
-  pan_auth: '网盘认证令牌',
-
   // Other Settings
   thread: '并发线程数',
   api_pwd: 'API 访问密码',
@@ -61,7 +65,6 @@ const configDescriptions = {
   enable_link_push: '启用链接推送',
   enable_link_jar: '启用 JAR 链接',
   mg_hz: 'MG 赫兹设置',
-  baidu_cookie: '百度 Cookie，用于百度网盘',
   enable_rule_name: '显示规则名称 (0=禁用, 1=启用)',
   must_sub_code: '强制订阅代码 (0=禁用, 1=启用)',
   brand_name: '品牌名称，用于站点名称前缀替换，可自定义广告文字（默认: 沫离影视）',
@@ -83,8 +86,8 @@ const configDescriptions = {
 }
 
 const groups = {
-  '云盘配置': ['quark_cookie', 'quark_token_cookie', 'uc_cookie', 'uc_token_cookie', 'ali_token', 'ali_refresh_token', 'pikpak_token', 'cloud_account', 'cloud_password', 'cloud_cookie', 'yun_account', 'yun_cookie', 'pan_passport', 'pan_password', 'pan_auth', 'xun_username', 'xun_password','xun_auth'],
-  '视频平台': ['bili_cookie', 'baidu_cookie'],
+  '云盘配置': ['quark_cookie', 'quark_token_cookie', 'uc_cookie', 'uc_token_cookie', 'ali_token', 'ali_refresh_token', 'pikpak_token', 'cloud_account', 'cloud_password', 'cloud_cookie', 'yun_account', 'yun_cookie', 'pan_passport', 'pan_password', 'pan_auth', 'xun_username', 'xun_password', 'xun_auth', 'baidu_cookie', 'panweb_cookie', 'panpt_cookie', 'pan123_cookie', 'wogg_cookie'],
+  '视频平台': ['bili_cookie', 'kfzys_cookie'],
   'AI 服务': ['spark_ai_authKey', 'deepseek_apiKey', 'kimi_apiKey', 'now_ai', 'sparkBotObject'],
   '代理设置': ['enable_system_proxy', 'PROXY_AUTH', 'play_proxy_mode', 'play_local_proxy_type', 'enable_doh', 'allow_forward', 'allow_ftp_cache_clear', 'allow_webdav_cache_clear'],
   '引擎设置': ['enable_dr2', 'enable_py', 'enable_php', 'enable_cat', 'enable_old_config', 'enable_self_jx', 'enable_formatted_names'],
