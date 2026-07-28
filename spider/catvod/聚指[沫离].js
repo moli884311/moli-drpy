@@ -2,7 +2,7 @@
 // API: http://103.45.131.38:50001
 // Encryption: AES-ECB (request) / AES-ECB+Base64 (response) + RSA sign
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 const BASE_URL = 'http://103.45.131.38:50001';
 
 let AES_KEY = 'OC1A06E197EF10CF3F6058CA7A803B5E';
