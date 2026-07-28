@@ -61,11 +61,15 @@ RUN apk add --no-cache \
     php83-json
 RUN ln -sf /usr/bin/php83 /usr/bin/php
 
-# 安装python3依赖
-RUN apk add --no-cache python3 \
+# 安装python3依赖、编译工具和PHP所需依赖
+RUN apk add --no-cache \
+    python3 \
     py3-pip \
     py3-setuptools \
-    py3-wheel
+    py3-wheel \
+    build-base \
+    libffi-dev \
+    openssl-dev
 
 # 激活python3虚拟环境并安装requirements依赖
 RUN python3 -m venv /app/.venv && \
