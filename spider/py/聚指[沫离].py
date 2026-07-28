@@ -4,7 +4,8 @@
   filterable: 0,
   quickSearch: 1,
   title: '聚指[沫离]',
-  lang: 'hipy'
+  lang: 'hipy',
+  ext: '{"keys":"11GK2we32144LO&hilUITB)FMd1khdaF,OC1A06E197EF10CF3F6058CA7A803B5E","pub":"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCr8SzZhjYy+rsya1K09t8d2K50pWFoBkgUqMpKOiW+3IEVKd4eTdvg9RSOjQ82kypL6R9BnsmrS1V8s4PVDwjQbUtYhTPPC9Hz16qY7rpD6m0d2vr09/UpWQ5uOy9PR0QTrsioveZ+DIe9jc3C+zBCu/kZSY/R8stwJoiitki3gwIDAQAB","pkg":"com.lxf.snzlcgtzxyx"}'
 })
 """
 
