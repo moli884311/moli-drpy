@@ -106,28 +106,38 @@ async function request(path, query) {
         url += '?' + params.toString();
     }
     
+    let publicParams = generatePublicParams();
+    console.log('[聚指] request:', path, 'publicParams length:', publicParams.length);
+    
     let headers = {
         'Accept': 'application/json',
         'User-Agent': 'okhttp/3.12.1',
         'Content-Type': 'application/json; charset=utf-8',
         'Connection': 'Keep-Alive',
         'Accept-Encoding': 'gzip',
-        'publicParams': generatePublicParams()
+        'publicParams': publicParams
     };
     
     let resp = await req(url, { headers: headers });
-    if (!resp || !resp.content) return null;
+    if (!resp || !resp.content) {
+        console.error('[聚指] request failed: no response for', path);
+        return null;
+    }
+    
+    console.log('[聚指] response length:', resp.content.length);
     
     try {
         let json = JSON.parse(resp.content);
         if (json.data && typeof json.data === 'string' && json.data.length > 100) {
             let decrypted = aesDecrypt(json.data);
             if (decrypted) {
+                console.log('[聚指] decrypted data length:', decrypted.length);
                 try { json.data = JSON.parse(decrypted); } catch(e) {}
             }
         }
         return json;
     } catch(e) {
+        console.error('[聚指] JSON parse error:', e.message, 'raw:', resp.content.substring(0, 200));
         return resp.content;
     }
 }
@@ -165,6 +175,7 @@ async function homeVod() {
 async function category(tid, pg, filter, extend) {
     try {
         pg = pg || 1;
+        console.log('[聚指] category:', tid, pg);
         let resp = await request('/api/v3/drama/list', {
             categoryId: tid,
             page: pg,
@@ -189,6 +200,7 @@ async function category(tid, pg, filter, extend) {
             total: data.total || list.length
         };
     } catch(e) {
+        console.error('[聚指] category error:', e.message, e.stack);
         return { list: [], page: pg, pagecount: 1, total: 0 };
     }
 }
@@ -272,6 +284,19 @@ async function play(flag, id, flags) {
             header: headers
         };
     } catch(e) {
+        console.error('[聚指] play error:', e.message);
         return { parse: 0, url: '' };
     }
+}
+
+export function __jsEvalReturn() {
+    return {
+        init: init,
+        home: home,
+        homeVod: homeVod,
+        category: category,
+        detail: detail,
+        search: search,
+        play: play,
+    };
 }
