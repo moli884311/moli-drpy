@@ -1,6 +1,6 @@
 {
   "wallpaper": "https://api.likepoems.com/img/bing/",
-  "spider": "../public/jar/pg.jar;md5;7633f8ea346c082b7aa163be58aed023",
+  "spider": "../public/jar/spider.jar;md5;59e1470f1011c399abadc5c22ad87b8b",
   "homepage": "https://github.com/hjdhnx/drpy-node",
   "logo": "https://github.com/moli884311/moli-drpy/blob/main/public/images/logo.jpg?raw=true",
   "aiLogo": "https://image.baidu.com/search/index?tn=baiduimage&ct=201326592&lm=-1&cl=2&word=%E7%8B%97%E4%BD%9C%E4%B8%BA%E8%BD%AF%E4%BB%B6%E5%9B%BE%E6%A0%87&dyTabStr=MCwxMiwzLDEsMiwxMyw3LDYsNSw5",
