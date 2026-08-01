@@ -2,7 +2,7 @@
  * 弹幕控制器
  *
  * 从 TVBox JAR (DanmakuApi.java) 反编译迁移并优化
- * 主源使用 konfan.cn 内置弹幕 API，失败后回退到自建 danmu_api（兼容 konfan.cn 接口格式）
+ * 主源使用自建 danmu_api，失败后回退到 Vercel 备用接口（均兼容 konfan.cn 接口格式）
  */
 
 import createAxiosInstance from "../utils/createAxiosAgent.js";
@@ -10,7 +10,7 @@ import createAxiosInstance from "../utils/createAxiosAgent.js";
 const _axios = createAxiosInstance({ maxSockets: 64 });
 
 // ── 弹幕 API 配置 ──
-const BUILTIN_API = "https://logvardanmu.konfan.cn/87654321";
+const BUILTIN_API = "http://8.130.134.173:9321/";
 const BACKUP_API = "https://danmuapi-1-nu.vercel.app/";
 const BUILTIN_TIMEOUT = 20000;
 const BUILTIN_MAX_RETRY = 2;
@@ -446,13 +446,13 @@ export default (fastify, options, done) => {
 
         let danmakuXml = "";
 
-        // 主源：konfan.cn 内置 API
-        console.log(`[danmu] 尝试 konfan.cn 内置 API...`);
+        // 主源：自建 danmu_api
+        console.log(`[danmu] 尝试自建 danmu_api 主接口...`);
         danmakuXml = await searchDanmuFromApi(BUILTIN_API, realName, episode);
 
         if (!danmakuXml) {
-            // 备用源：自建 danmu_api
-            console.log(`[danmu] konfan.cn 无结果，尝试自建 danmu_api...`);
+            // 备用源：Vercel 部署接口
+            console.log(`[danmu] 主接口无结果，尝试 Vercel 备用接口...`);
             danmakuXml = await searchDanmuFromApi(BACKUP_API, realName, episode);
         }
 
