@@ -317,21 +317,23 @@ function commentJsonToXml(body) {
     try {
         const obj = JSON.parse(body);
         let comments = obj.comments || obj.data;
-        if (!comments || !Array.isArray(comments) || comments.length === 0) return "";
+        if (!comments || !Array.isArray(comments) || comments.length === 0) return { xml: "", count: 0 };
 
         let xml = "<i>";
+        let count = 0;
         for (const item of comments) {
             if (!item) continue;
             let param = item.p || "";
             let text = item.m || item.text || "";
             if (!param || !text) continue;
             xml += `<d p="${escapeXml(normalizeDanmakuParam(param))}">${escapeXml(text)}</d>`;
+            count++;
         }
         xml += "</i>";
-        console.log(`[danmu] builtin xml length: ${xml.length}`);
-        return xml;
+        console.log(`[danmu] builtin xml length: ${xml.length}, 弹幕条数: ${count}`);
+        return { xml, count };
     } catch (e) {
-        return "";
+        return { xml: "", count: 0 };
     }
 }
 
@@ -343,7 +345,7 @@ async function loadBuiltinComment(baseUrl, title, episode, episodeMatch) {
     console.log(`[danmu] builtin comment: ${commentUrl}`);
 
     const body = await httpGet(commentUrl, {}, BUILTIN_TIMEOUT);
-    if (!body) return "";
+    if (!body) return { xml: "", count: 0 };
     return commentJsonToXml(body);
 }
 
@@ -405,15 +407,15 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
             // 步骤1: 搜索 episodes
             let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
             if (episodeMatch) {
-                const xml = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-                if (xml) return xml;
+                const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
+                if (result.xml) return result;
             }
 
             // 步骤2: 搜索 anime
             episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
             if (episodeMatch) {
-                const xml = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-                if (xml) return xml;
+                const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
+                if (result.xml) return result;
             }
 
             // 本次重试失败，继续下一次
@@ -424,7 +426,21 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
     }
 
     console.log(`[danmu] builtin all retries exhausted for: ${name}`);
-    return "";
+    return { xml: "", count: 0 };
+}
+
+// ── 弹幕 XML 组装 ──
+
+/**
+ * 将弹幕内容组装为带 chatid 的完整弹幕 XML
+ *
+ * TVBox 虎斑版/影视仓客户端在解析弹幕 XML 时读取 <chatid> 标签的值，
+ * 非空值会触发客户端的 Toast 弹窗提示，用于展示弹幕数量。
+ * 仅统计成功返回的弹幕条数（<d> 标签数量），避免额外请求。
+ */
+function buildDanmuXml(innerXml, count) {
+    const content = innerXml.replace(/^\s*<i>/, "").replace(/<\/i>\s*$/, "").trim();
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n  <chatserver></chatserver>\n  <chatid>${count}</chatid>\n  <source>k-v</source>\n${content}\n</i>`;
 }
 
 // ── 路由注册 ──
@@ -445,20 +461,21 @@ export default (fastify, options, done) => {
         console.log(`[danmu] realName=${realName}`);
 
         let danmakuXml = "";
+        let danmakuResult = { xml: "", count: 0 };
 
         // 主源：自建 danmu_api
         console.log(`[danmu] 尝试自建 danmu_api 主接口...`);
-        danmakuXml = await searchDanmuFromApi(BUILTIN_API, realName, episode);
+        danmakuResult = await searchDanmuFromApi(BUILTIN_API, realName, episode);
 
-        if (!danmakuXml) {
+        if (!danmakuResult.xml) {
             // 备用源：Vercel 部署接口
             console.log(`[danmu] 主接口无结果，尝试 Vercel 备用接口...`);
-            danmakuXml = await searchDanmuFromApi(BACKUP_API, realName, episode);
+            danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode);
         }
 
-        if (danmakuXml) {
-            danmakuXml = `<?xml version="1.0" encoding="UTF-8"?>\n` + danmakuXml;
-            console.log(`[danmu] danmu_api 成功`);
+        if (danmakuResult.xml) {
+            danmakuXml = buildDanmuXml(danmakuResult.xml, danmakuResult.count);
+            console.log(`[danmu] danmu_api 成功, 弹幕条数: ${danmakuResult.count}`);
         }
 
         if (!danmakuXml) {

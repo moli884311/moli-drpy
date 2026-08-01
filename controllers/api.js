@@ -27,7 +27,6 @@ import hipy from '../libs/hipy.js';
 import php from '../libs/php.js';
 import xbpq from '../libs/xbpq.js';
 import catvod from '../libs/catvod.js';
-import {enrichResponseData} from '../utils/danmu-helper.js';
 
 /**
  * 支持的引擎映射表
@@ -86,47 +85,6 @@ function withTimeout(promise, timeoutMs = null, operation = 'API操作', invokeM
 export default (fastify, options, done) => {
     // 启动JSON监听器，监控规则文件变化
     startJsonWatcher(ENGINES, options.jsonDir);
-
-    /**
-     * 全局响应增强钩子：为视频详情 / 搜索结果自动追加弹幕数量提示
-     *
-     * 处理条件：
-     * 1. 仅处理 application/json 文本响应
-     * 2. 仅处理详情接口（ac + ids）和搜索接口（wd），避免影响首页/分类等大批量响应
-     *
-     * 增强逻辑委托给 utils/danmu-helper.js 的 enrichResponseData：
-     * - 递归遍历找到所有视频项（含 vod_name 或 name 的对象）
-     * - 在 vod_remarks / notice 末尾追加弹幕数量提示，不覆盖原有内容
-     * - 内置 10 分钟缓存与并发控制，外部服务超时（5秒）时优雅降级
-     *
-     * 任何异常均优雅降级，返回原始 payload，不影响正常接口返回
-     */
-    fastify.addHook('onSend', async (request, reply, payload) => {
-        // 仅处理 JSON 文本响应，其他类型（如弹幕XML、媒体流、静态文件）直接放行
-        const contentType = reply.getHeader('content-type');
-        if (typeof payload !== 'string' || !contentType || !String(contentType).includes('application/json')) {
-            return payload;
-        }
-
-        // 仅处理详情接口（ac + ids）与搜索接口（wd）
-        const query = request.query || {};
-        const isDetailRequest = 'ac' in query && 'ids' in query;
-        const isSearchRequest = 'wd' in query;
-        if (!isDetailRequest && !isSearchRequest) return payload;
-
-        try {
-            const data = JSON.parse(payload);
-            const handled = await enrichResponseData(data);
-            if (handled > 0) {
-                console.log(`[danmu-helper] 已增强 ${handled} 个视频项: ${request.raw.url}`);
-                return JSON.stringify(data);
-            }
-        } catch (e) {
-            // 解析或增强失败时优雅降级，返回原始 payload
-            console.error(`[danmu-helper] 响应增强失败: ${e.message}`);
-        }
-        return payload;
-    });
 
     const danmuCache = new Map();
 
