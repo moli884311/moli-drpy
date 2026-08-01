@@ -2,26 +2,18 @@
  * 弹幕控制器
  *
  * 从 TVBox JAR (DanmakuApi.java) 反编译迁移并优化
- * 优先使用 konfan.cn 内置弹幕 API（多级搜索+回退），
- * 保留 360kan + 公共弹幕 API 作为 fallback
+ * 主源使用 konfan.cn 内置弹幕 API，失败后回退到自建 danmu_api（兼容 konfan.cn 接口格式）
  */
 
 import createAxiosInstance from "../utils/createAxiosAgent.js";
 
 const _axios = createAxiosInstance({ maxSockets: 64 });
 
-// ── 内置弹幕 API 配置 ──
+// ── 弹幕 API 配置 ──
 const BUILTIN_API = "https://logvardanmu.konfan.cn/87654321";
+const BACKUP_API = "https://danmuapi-1-nu.vercel.app/";
 const BUILTIN_TIMEOUT = 20000;
 const BUILTIN_MAX_RETRY = 2;
-
-// ── 公共弹幕 API 配置 ──
-const COLORS = ["16711680", "16776960", "65280", "255", "16711935", "8388736", "16753920", "65535", "16777215", "16761087", "16777087", "8978431", "6527999", "16744447", "16756735", "8454143", "16724787", "16777215", "16752723", "16776951", "10000639", "5729279", "16645625", "16185078", "12334518", "13882321", "16777215", "16209488", "16772810", "16766758", "16777014", "16772362", "16773119", "14410239", "11835903", "16777215"];
-const WHITE_COLORS = ["16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16777215", "16711680", "16776960", "255", "65280", "8388736"];
-
-function randomColor(colors) {
-    return colors[Math.floor(Math.random() * colors.length)];
-}
 
 // ── 通用工具函数 ──
 
@@ -139,7 +131,7 @@ function normalizeDanmakuParam(param) {
     return time + "," + type + "," + size + "," + normalizeColor(color);
 }
 
-// ── konfan.cn 内置弹幕 API 搜索 ──
+// ── 自建 danmu_api 弹幕搜索 ──
 
 function normalizeBaseUrl(apiUrl) {
     let url = (apiUrl || "").trim();
@@ -343,7 +335,7 @@ function commentJsonToXml(body) {
     }
 }
 
-// ── konfan.cn 内置 API 完整搜索流程 ──
+// ── 自建 danmu_api 完整搜索流程 ──
 
 async function loadBuiltinComment(baseUrl, title, episode, episodeMatch) {
     const commentUrl = `${baseUrl}/api/v2/comment/${episodeMatch.id}?format=json`;
@@ -399,8 +391,8 @@ async function searchBuiltinEpisodes(baseUrl, name, episode, queryMode = 0) {
     return null;
 }
 
-async function searchKonfanDanmaku(name, episode) {
-    const baseUrl = normalizeBaseUrl(BUILTIN_API);
+async function searchDanmuFromApi(baseUrl, name, episode) {
+    const base = normalizeBaseUrl(baseUrl);
     const epNum = episode || 1;
 
     for (let retry = 0; retry <= BUILTIN_MAX_RETRY; retry++) {
@@ -411,16 +403,16 @@ async function searchKonfanDanmaku(name, episode) {
 
         try {
             // 步骤1: 搜索 episodes
-            let episodeMatch = await searchBuiltinEpisodes(baseUrl, name, String(epNum));
+            let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
             if (episodeMatch) {
-                const xml = await loadBuiltinComment(baseUrl, name, String(epNum), episodeMatch);
+                const xml = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
                 if (xml) return xml;
             }
 
             // 步骤2: 搜索 anime
-            episodeMatch = await searchBuiltinAnime(baseUrl, name, String(epNum));
+            episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
             if (episodeMatch) {
-                const xml = await loadBuiltinComment(baseUrl, name, String(epNum), episodeMatch);
+                const xml = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
                 if (xml) return xml;
             }
 
@@ -435,153 +427,12 @@ async function searchKonfanDanmaku(name, episode) {
     return "";
 }
 
-// ── 360kan + 公共 API 弹幕搜索（原有逻辑，作为 fallback）──
-
-async function getDanmuFromOK360(name, episode) {
-    try {
-        const kw = encodeURIComponent(name);
-        const html = await httpGet(`https://api.so.360kan.com/index?force_v=1&kw=${kw}&from=&pageno=1&v_ap=1&tab=all`);
-        if (!html || !html.startsWith("{")) {
-            console.log(`[danmu] 360kan 请求失败或非JSON: name=${name}`);
-            return "";
-        }
-
-        const data = JSON.parse(html).data;
-        if (!data || !data.longData) {
-            console.log(`[danmu] 360kan 无 longData: name=${name}`);
-            return "";
-        }
-
-        const rows = data.longData.rows;
-        if (!rows || rows.length === 0) {
-            console.log(`[danmu] 360kan 无 rows: name=${name}`);
-            return "";
-        }
-
-        for (const row of rows) {
-            const catName = row.cat_name;
-            let playUrl = "";
-            const hasPlaylinks = !!row.playlinks;
-            const hasSeriesPlaylinks = !!(row.seriesPlaylinks && row.seriesPlaylinks.length > 0);
-            console.log(`[danmu] 360kan row: cat=${catName}, hasPlaylinks=${hasPlaylinks}, hasSeriesPlaylinks=${hasSeriesPlaylinks}`);
-
-            if (catName === "\u7535\u5f71") {
-                const links = row.playlinks;
-                if (!links) continue;
-                playUrl = links.qq || links.qiyi || links.youku || links.imgo || "";
-            } else {
-                const seriesLinks = row.seriesPlaylinks;
-                if (!seriesLinks || seriesLinks.length === 0) continue;
-                const idx = Math.max(0, (episode || 1) - 1);
-                if (idx >= seriesLinks.length) continue;
-                const ep = seriesLinks[idx];
-                if (!ep) continue;
-                playUrl = ep.url || "";
-            }
-
-            if (!playUrl) continue;
-
-            if (playUrl.includes("v.qq.com") && playUrl.includes(".html")) {
-                const idx = playUrl.indexOf(".html");
-                playUrl = playUrl.substring(0, idx + 5);
-            } else if (playUrl.includes("www.iqiyi.com") && playUrl.includes(".html")) {
-                const idx = playUrl.indexOf(".html");
-                playUrl = playUrl.substring(0, idx + 5);
-            } else if (playUrl.includes("www.mgtv.com") && playUrl.includes(".html")) {
-                const idx = playUrl.indexOf(".html");
-                playUrl = playUrl.substring(0, idx + 5);
-            } else if (playUrl.includes("v.youku.com")) {
-                const vidIdx = playUrl.indexOf("vid=");
-                if (vidIdx !== -1) {
-                    const start = vidIdx + 4;
-                    const endIdx = playUrl.indexOf("&", start);
-                    const vid = playUrl.substring(start, endIdx === -1 ? playUrl.length : endIdx);
-                    if (vid) playUrl = `https://v.youku.com/v_show/id_${vid}.html`;
-                }
-            }
-
-            console.log(`[danmu] 360kan 获取到播放链接: ${playUrl}`);
-            return playUrl;
-        }
-        console.log(`[danmu] 360kan 未找到有效播放链接: name=${name}`);
-        return "";
-    } catch (e) {
-        console.log(`[danmu] 360kan 异常: ${e.message}`);
-        return "";
-    }
-}
-
-async function fetchDanmakuJsonFromApi(playUrl) {
-    const apis = [
-        (url) => `https://danmu.huaqi.pro/?url=${encodeURIComponent(url)}`,
-        (url) => `https://dmku.hls.one/?ac=dm&url=${encodeURIComponent(url)}`,
-        (url) => `https://danmu.zxz.ee/?type=json&id=${encodeURIComponent(url)}`,
-        (url) => `https://dm.ruyijx.com?ac=dm&url=${encodeURIComponent(url)}`,
-    ];
-
-    for (const buildUrl of apis) {
-        const apiUrl = buildUrl(playUrl);
-        const resp = await httpGet(apiUrl);
-        if (resp && resp.includes('"code":23')) {
-            return resp;
-        }
-    }
-    return "";
-}
-
-function parseDanmakuJson(jsonStr) {
-    try {
-        const obj = JSON.parse(jsonStr);
-        const danmuku = obj.danmuku;
-        if (!danmuku || !Array.isArray(danmuku)) return [];
-        return danmuku.filter(item => {
-            if (!Array.isArray(item) || item.length < 5) return false;
-            const text = item[4] || "";
-            if (text.includes("\u8bf7\u9075\u5b88\u5f39\u5e55\u793c\u4eea") || text.includes("\u5b98\u65b9\u5f39\u5e55\u5e93") ||
-                text.includes("\u672a\u4f20\u5165\u94fe\u63a5\u8c03\u7528") || text.includes("\u5f39\u5e55\u5217\u961f") ||
-                text.includes("\u706b\u82b1\u5267\u573a") || text.includes("\u4e91\u70df\u5c0f\u52a9\u624b") ||
-                text.includes("\u5fae\u4fe1\u516c\u4f17\u53f7")) {
-                return false;
-            }
-            return true;
-        });
-    } catch (e) {
-        return [];
-    }
-}
-
-function generateXml(danmuku, useColor = false) {
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<i>\n';
-    xml += "  <chatserver></chatserver>\n";
-    xml += "  <chatid>0</chatid>\n";
-    xml += "  <mission>0</mission>\n";
-    xml += "  <maxlimit>1500</maxlimit>\n";
-    xml += "  <state>0</state>\n";
-    xml += "  <real_name>0</real_name>\n";
-    xml += "  <source>k-v</source>\n";
-
-    const colors = useColor ? COLORS : WHITE_COLORS;
-    const colorsCount = colors.length;
-
-    for (let i = 0; i < danmuku.length; i++) {
-        const entry = danmuku[i];
-        const time = entry[0] || "0";
-        const text = escapeXml(String(entry[4] || ""));
-        const color = randomColor(colors);
-        xml += `  <d p="${time},1,25,${color}">${text}</d>\n`;
-    }
-
-    xml += "</i>";
-    return xml;
-}
-
 // ── 路由注册 ──
 
 export default (fastify, options, done) => {
     fastify.get("/danmu", async (req, reply) => {
         const name = req.query.name || req.query.vodName || "";
         const episode = parseInt(req.query.episode || req.query.vodIndex || "1", 10);
-        const useColor = req.query.color !== "0";
 
         console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
 
@@ -595,29 +446,19 @@ export default (fastify, options, done) => {
 
         let danmakuXml = "";
 
-        // 优先使用 konfan.cn 内置弹幕 API
+        // 主源：konfan.cn 内置 API
         console.log(`[danmu] 尝试 konfan.cn 内置 API...`);
-        danmakuXml = await searchKonfanDanmaku(realName, episode);
+        danmakuXml = await searchDanmuFromApi(BUILTIN_API, realName, episode);
+
+        if (!danmakuXml) {
+            // 备用源：自建 danmu_api
+            console.log(`[danmu] konfan.cn 无结果，尝试自建 danmu_api...`);
+            danmakuXml = await searchDanmuFromApi(BACKUP_API, realName, episode);
+        }
 
         if (danmakuXml) {
             danmakuXml = `<?xml version="1.0" encoding="UTF-8"?>\n` + danmakuXml;
-            console.log(`[danmu] konfan.cn API 成功`);
-        } else {
-            console.log(`[danmu] konfan.cn API 无结果，回退到 360kan + 公共 API`);
-            const playUrl = await getDanmuFromOK360(realName, episode);
-            console.log(`[danmu] playUrl=${playUrl || "(空)"}`);
-
-            if (playUrl) {
-                const jsonResp = await fetchDanmakuJsonFromApi(playUrl);
-                console.log(`[danmu] jsonResp length=${jsonResp ? jsonResp.length : 0}`);
-                if (jsonResp) {
-                    const entries = parseDanmakuJson(jsonResp);
-                    console.log(`[danmu] entries count=${entries.length}`);
-                    if (entries.length > 0) {
-                        danmakuXml = generateXml(entries, useColor);
-                    }
-                }
-            }
+            console.log(`[danmu] danmu_api 成功`);
         }
 
         if (!danmakuXml) {
