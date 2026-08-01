@@ -432,15 +432,20 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
 // ── 弹幕 XML 组装 ──
 
 /**
- * 将弹幕内容组装为带 chatid 的完整弹幕 XML
+ * 将弹幕内容组装为带弹幕数量提示的完整弹幕 XML
  *
- * TVBox 虎斑版/影视仓客户端在解析弹幕 XML 时读取 <chatid> 标签的值，
- * 非空值会触发客户端的 Toast 弹窗提示，用于展示弹幕数量。
+ * 输出规格：
+ * - <i count="X"> 根节点携带弹幕总数
+ * - <chatid>X</chatid> 值为弹幕总数
+ * - <source>匹配到 X 条弹幕</source>（无弹幕时为"暂无弹幕"）
+ *
+ * 客户端在解析弹幕 XML 时读取 <chatid>/<source> 的值来触发 Toast 弹窗提示。
  * 仅统计成功返回的弹幕条数（<d> 标签数量），避免额外请求。
  */
 function buildDanmuXml(innerXml, count) {
     const content = innerXml.replace(/^\s*<i>/, "").replace(/<\/i>\s*$/, "").trim();
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n  <chatserver></chatserver>\n  <chatid>${count}</chatid>\n  <source>k-v</source>\n${content}\n</i>`;
+    const hint = count > 0 ? `匹配到 ${count} 条弹幕` : "暂无弹幕";
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<i count="${count}">\n  <chatserver></chatserver>\n  <chatid>${count}</chatid>\n  <source>${hint}</source>\n${content ? content + "\n" : ""}</i>`;
 }
 
 // ── 路由注册 ──
@@ -479,7 +484,7 @@ export default (fastify, options, done) => {
         }
 
         if (!danmakuXml) {
-            danmakuXml = '<?xml version="1.0" encoding="UTF-8"?>\n<i>\n  <chatserver></chatserver>\n  <chatid>0</chatid>\n  <source>k-v</source>\n</i>';
+            danmakuXml = buildDanmuXml("", 0);
         }
 
         reply.header("Content-Type", "application/xml; charset=utf-8");
