@@ -131,6 +131,15 @@
 
 ## 更新记录
 
+### 2026-08-04 更新至 **V1.5.0**
+- 🎉 **整合自建弹幕 API（danmu-api）**，实现完全本地化的弹幕服务，无需依赖任何外部接口
+- 🌈 **彩色弹幕支持**：每条弹幕自动分配不同颜色，告别单调，提升观看体验
+- 🔧 **修复 XML 重复声明问题**：完美兼容 TVBox、WebBox 等播放器，不再出现解析错误
+- 📡 **新增 `/action` 管理接口**：支持 TVBox 推送刷新机制，可配合本地代理实现弹幕实时更新
+- 🚀 **提供 Docker 一键部署方案**：简化安装流程，任何人都能快速部署
+- ⚙️ **完整的环境变量配置**：支持自定义数据源、缓存策略、限流等高级调优
+- 📚 **超详细部署教程**：从零开始，一步步指导完成部署
+
 ### 2026-07-07 更新至 **V1.4.4**
 ### 2026-03-22 更新至 **V1.4.3**
 ### 2026-03-21 更新至 **V1.4.2**
@@ -141,6 +150,7 @@
 ### 2026-03-14 更新至 **V1.3.28**
 
 > [点此查看完整更新记录](docs/updateRecord.md)
+
 ---
 
 ## 注意事项
@@ -200,20 +210,15 @@
 **终端执行：**
 ```bash
 bash -c "$(curl -fsSLk https://git-proxy.playdreamer.cn/hjdhnx/drpy-node/raw/refs/heads/main/install/autorun.sh)"
-```
 
-**添加定时方案：**
-```bash
+添加定时方案：
+
+bash
 echo "30 7 * * * cd /patch && bash -c \"\$(curl -fsSLk https://git-proxy.playdreamer.cn/hjdhnx/drpy-node/raw/refs/heads/main/install/autorun.sh)\" >> /patch/drpyslog.log 2>&1" | crontab -
-```
+命令说明：/patch 为脚本存放路径（脚本放在与源码同级的自定义目录中）
 
-命令说明：`/patch` 为脚本存放路径（脚本放在与源码同级的自定义目录中）
-
----
-
-### 方案三：道长腾讯轻量云服务器安装方案
-
-```shell
+方案三：道长腾讯轻量云服务器安装方案
+shell
 mkdir /home/node_work
 cd /home/node_work
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
@@ -231,56 +236,282 @@ pm2 ls
 pm2 stop drpys
 pm2 start drpys
 pm2 restart drpys
-```
+弹幕服务整合（本地弹幕 API）
+本项目现已集成自建弹幕 API（danmu-api），实现完全本地化的弹幕服务，无需依赖任何外部弹幕接口，支持 TVBox、WebBox 等播放器，并提供以下增强功能：
 
----
+✅ 本地弹幕引擎：内置完整弹幕搜索、匹配、拉取逻辑，数据源可自由配置（支持 B站、腾讯、优酷、爱奇艺、芒果、豆瓣、人人等主流平台）
 
-## 代理转发功能测试
+✅ 彩色弹幕：每条弹幕自动分配不同颜色，告别单调，提升观看体验
 
-- [代理转发ds](/req/https://github.com/hjdhnx/drpy-node)
-- [代理转发百度](/req/https://www.baidu.com)
-- [代理转发范冰冰直播源](/req/https://live.fanmingming.com/tv/m3u/ipv6.m3u)
+✅ XML 格式修复：完美兼容 TVBox 和 WebBox 解析，无重复声明错误
 
----
+✅ TVBox 推送联动：支持 /action 管理接口，可配合 TVBox 本地代理实现弹幕刷新
 
-## 友链（白嫖接口服务）
+✅ 高性能缓存：搜索和弹幕数据均有缓存，降低上游请求压力
 
-- [猫影视git文件加速](https://github.catvod.com/)
-- [猫影视多功能主页](https://catvod.com/)
-- [ZY写源教学](https://zy.catni.cn/editSource/edit-grammar.html)
-- [源动力-新](https://tvshare.cn/)
-- [源动力-老](https://sourcepower.top/index)
-- [电竞专业反应测试](https://www.arealme.com/brain-memory-game/zh/)
-- [桌面启动器](https://wwbty.lanzouv.com/iDZaP3d3i5ud)
-- [不知名获取网盘CK工具](http://sspa8.top:8100/pan/admin/index.php)
+✅ 一键部署：通过 Docker 镜像可快速部署，无需手动配置
 
----
+部署方式
+您可以使用以下三种方式之一部署本服务：
 
-## AI接入
+方式一：Docker 一键部署（推荐）
+克隆仓库
 
-- [讯飞星火](https://console.xfyun.cn/services/bm4)
-- [deepseek](https://platform.deepseek.com/api_keys) | [对话](https://chat.deepseek.com/)
-- [讯飞智能体](https://xinghuo.xfyun.cn/botcenter/createbot) | [对话](https://xinghuo.xfyun.cn/botweb/0b83d4b1c0447e82ea00fe9485bd9353) | [数据集](https://xinghuo.xfyun.cn/botcenter/private-dataset)
-- [KIMI](https://platform.moonshot.cn/console/info) | [对话](https://kimi.moonshot.cn/)
+bash
+git clone https://github.com/moli884311/moli-drpy.git
+cd moli-drpy
+构建镜像
 
----
+bash
+docker build -t moli-drpy:latest .
+运行容器
 
-## 品牌名称自定义
+bash
+docker run -d --name moli-drpy -p 5757:5757 -p 9321:9321 --restart=always moli-drpy:latest
+端口说明：
 
-在管理面板的环境配置中修改 `brand_name` 变量，即可更换站点名称中的品牌前缀（默认：沫离影视）。修改后所有站点名称和接口输出中的品牌文字将同步更新，可用于品牌展示或广告用途。
+5757：drpy 主服务端口，用于 TVBox/WebBox 获取弹幕数据
 
----
+9321：danmu-api 管理界面端口（可选），可通过 http://你的IP:9321 访问
 
-## 版权
+验证
 
+bash
+curl "http://localhost:5757/danmu?name=test&episode=1"
+如果返回 XML 弹幕，说明服务正常。
+
+方式二：Docker Compose 编排（便于管理）
+创建 docker-compose.yml：
+
+yaml
+version: '3.8'
+services:
+  drpy:
+    build: .
+    container_name: moli-drpy
+    restart: always
+    ports:
+      - "5757:5757"
+      - "9321:9321"
+    environment:
+      - DANMU_API_PORT=9321
+      - SOURCE_ORDER=360,vod,tencent,youku,iqiyi,imgo,bilibili,migu,renren,hanjutv,dandan
+      - DANMU_OUTPUT_FORMAT=xml
+      - CONVERT_COLOR=default
+      - DANMU_PUSH_URL=http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=
+      - LOG_LEVEL=info
+      - SEARCH_CACHE_MINUTES=5
+      - COMMENT_CACHE_MINUTES=10
+      - RATE_LIMIT_MAX_REQUESTS=10
+      - GROUP_MINUTE=1
+      - ENABLE_ANIME_EPISODE_FILTER=true
+      # 如需自定义 VOD 采集站，可添加 VOD_SERVERS 变量
+    volumes:
+      # 可选：挂载自定义环境变量文件
+      - ./danmu.env:/app/libs/danmu_api/danmu_api/.env:ro
+然后执行：
+
+bash
+docker-compose up -d
+方式三：裸机部署（传统方式）
+安装 Node.js 22 和 yarn
+
+克隆仓库并安装依赖
+
+进入 libs/danmu_api/danmu_api 目录，执行 npm install
+
+修改 controllers/danmu.js 中的 BUILTIN_API 为 http://127.0.0.1:9321/（如需）
+
+启动 danmu-api：node /app/libs/danmu_api/danmu_api/server.js &
+
+启动 drpy：node index.js
+
+环境变量配置（可选）
+您可以通过以下环境变量调整弹幕服务行为（在 docker run 或 docker-compose 中设置）：
+
+变量名	说明	默认值
+DANMU_API_PORT	danmu-api 监听端口	9321
+SOURCE_ORDER	数据源优先级（逗号分隔）	360,vod,tencent,youku,iqiyi,imgo,bilibili,migu,renren,hanjutv,dandan
+DANMU_OUTPUT_FORMAT	输出格式（xml 或 json）	xml
+CONVERT_COLOR	颜色转换策略（default 保留原始颜色，white 全白，color 强制彩色）	default（由 drpy 控制）
+DANMU_PUSH_URL	TVBox 推送回调地址	http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=
+SEARCH_CACHE_MINUTES	搜索缓存时间（分钟）	5
+COMMENT_CACHE_MINUTES	弹幕缓存时间（分钟）	10
+RATE_LIMIT_MAX_REQUESTS	每分钟每 IP 最大请求数	10
+GROUP_MINUTE	弹幕去重时间窗口（分钟）	1
+ENABLE_ANIME_EPISODE_FILTER	是否过滤花絮/预告等非正片	true
+如需更高级配置（如 VOD 采集站、代理、TMDB 等），请参考 libs/danmu_api/danmu_api/.env.example 文件，并挂载到容器中。
+
+使用示例
+TVBox 弹幕配置：在 TVBox 的弹幕设置中，填入 http://你的服务器IP:5757/danmu
+
+WebBox 使用：直接引用相同的地址即可，支持跨域
+
+手动测试：curl "http://你的服务器IP:5757/danmu?name=间谍过家家&episode=1" 会返回 XML 弹幕
+
+管理界面
+如果 danmu-api 带有管理界面，可通过 http://你的服务器IP:9321 访问（需在容器中暴露该端口）。
+
+超详细部署教程（Docker 一键部署）
+以下教程适合没有任何 Docker 经验的用户，一步一步带你完成部署。
+
+前提条件
+一台 Linux 服务器（CentOS/Ubuntu/Debian 均可）
+
+服务器已安装 Docker（如果没有，请先执行下方安装 Docker 的命令）
+
+第一步：安装 Docker
+CentOS 7/8：
+
+bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo systemctl start docker
+sudo systemctl enable docker
+Ubuntu/Debian：
+
+bash
+sudo apt update
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+第二步：克隆项目并构建镜像
+bash
+# 克隆仓库
+git clone https://github.com/moli884311/moli-drpy.git
+cd moli-drpy
+
+# 构建镜像（首次构建约需 5-10 分钟，视网络而定）
+docker build -t moli-drpy:latest .
+第三步：运行容器
+bash
+docker run -d --name moli-drpy -p 5757:5757 -p 9321:9321 --restart=always moli-drpy:latest
+参数说明：
+
+-d：后台运行
+
+--name moli-drpy：指定容器名
+
+-p 5757:5757：映射 drpy 端口
+
+-p 9321:9321：映射 danmu-api 管理端口
+
+--restart=always：容器意外退出时自动重启
+
+第四步：验证服务
+bash
+# 查看容器运行状态
+docker ps | grep moli-drpy
+
+# 测试弹幕接口
+curl "http://localhost:5757/danmu?name=test&episode=1"
+如果返回 XML 格式的弹幕数据，说明部署成功。
+
+第五步：配置 TVBox/WebBox
+在 TVBox 的弹幕设置中，将弹幕地址填写为：
+
+text
+http://你的服务器公网IP:5757/danmu
+例如：http://123.456.789.0:5757/danmu
+
+播放视频时，TVBox 会自动拼接 ?name=视频名&episode=集数，无需手动添加。
+
+第六步（可选）：配置自定义环境变量
+如果您想调整弹幕源、缓存时间等，可以创建 danmu.env 文件（参考上面的环境变量表），然后重新运行容器并挂载该文件：
+
+bash
+docker stop moli-drpy
+docker rm moli-drpy
+docker run -d --name moli-drpy -p 5757:5757 -p 9321:9321 --restart=always -v $(pwd)/danmu.env:/app/libs/danmu_api/danmu_api/.env moli-drpy:latest
+常见问题
+Q：访问 /danmu 返回空 XML？
+A：检查 danmu-api 是否正常运行：docker exec moli-drpy ps aux | grep server.js。如果进程不存在，查看日志：docker logs moli-drpy。
+
+Q：TVBox 无法加载弹幕？
+A：确认防火墙已放行 5757 端口，且在 TVBox 中填写的地址正确（注意是公网 IP，不是 127.0.0.1）。
+
+Q：如何更新服务？
+A：重新拉取最新代码并重新构建镜像，然后替换容器即可。
+
+bash
+git pull
+docker build -t moli-drpy:latest .
+docker stop moli-drpy
+docker rm moli-drpy
+docker run -d --name moli-drpy -p 5757:5757 -p 9321:9321 --restart=always moli-drpy:latest
+代理转发功能测试
+代理转发ds
+
+代理转发百度
+
+代理转发范冰冰直播源
+
+友链（白嫖接口服务）
+猫影视git文件加速
+
+猫影视多功能主页
+
+ZY写源教学
+
+源动力-新
+
+源动力-老
+
+电竞专业反应测试
+
+桌面启动器
+
+不知名获取网盘CK工具
+
+AI接入
+讯飞星火
+
+deepseek | 对话
+
+讯飞智能体 | 对话 | 数据集
+
+KIMI | 对话
+
+品牌名称自定义
+在管理面板的环境配置中修改 brand_name 变量，即可更换站点名称中的品牌前缀（默认：沫离影视）。修改后所有站点名称和接口输出中的品牌文字将同步更新，可用于品牌展示或广告用途。
+
+版权
 本项目主体框架由道长开发，项目内相关源收集于互联网，可供学习交流测试使用，禁止商用或者直接转卖代码，转载代码请带上出处。
 
-## 免责声明
+免责声明
+此程序仅用于学习研究，不保证其合法性、准确性、有效性，请根据情况自行判断，本人对此不承担任何保证责任。
 
-1. 此程序仅用于学习研究，不保证其合法性、准确性、有效性，请根据情况自行判断，本人对此不承担任何保证责任。
-2. 由于此程序仅用于学习研究，您必须在下载后 24 小时内将所有内容从您的计算机或手机或任何存储设备中完全删除，若违反规定引起任何事件本人对此均不负责。
-3. 请勿将此程序用于任何商业或非法目的，若违反规定请自行对此负责。
-4. 此程序涉及应用与本人无关，本人对因此引起的任何隐私泄漏或其他后果不承担任何责任。
+由于此程序仅用于学习研究，您必须在下载后 24 小时内将所有内容从您的计算机或手机或任何存储设备中完全删除，若违反规定引起任何事件本人对此均不负责。
+
+请勿将此程序用于任何商业或非法目的，若违反规定请自行对此负责。
+
+此程序涉及应用与本人无关，本人对因此引起的任何隐私泄漏或其他后果不承担任何责任。
+
+本人对任何程序引发的问题概不负责，包括但不限于由程序错误引起的任何损失和损害。
+
+如果任何单位或个人认为此程序可能涉嫌侵犯其权利，应及时通知并提供身份证明，所有权证明，我们将在收到认证文件确认后删除此程序。
+
+所有直接或间接使用、查看此程序的人均应该仔细阅读此声明。本人保留随时更改或补充此声明的权利。一旦您使用或复制了此程序，即视为您已接受此免责声明。
+
+text
+
+---
+
+## ✅ 如何复制
+
+1. 点击代码块右上角的 **"复制"** 按钮（如果支持），或手动全选代码块内容。
+2. 粘贴到您的 `README.md` 文件中。
+
+---
+
+## 📌 如果仍然显示截断
+
+因为文件长度超过平台显示限制，您可能需要在复制后检查结尾是否完整。完整内容的末尾应为：
+
+```markdown
+此程序涉及应用与本人无关，本人对因此引起的任何隐私泄漏或其他后果不承担任何责任。
 5. 本人对任何程序引发的问题概不负责，包括但不限于由程序错误引起的任何损失和损害。
 6. 如果任何单位或个人认为此程序可能涉嫌侵犯其权利，应及时通知并提供身份证明，所有权证明，我们将在收到认证文件确认后删除此程序。
 7. 所有直接或间接使用、查看此程序的人均应该仔细阅读此声明。本人保留随时更改或补充此声明的权利。一旦您使用或复制了此程序，即视为您已接受此免责声明。
+
+
