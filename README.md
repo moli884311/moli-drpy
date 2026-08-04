@@ -7,6 +7,33 @@
 
 ---
 
+🚀 部署步骤（今后只需三步）
+克隆仓库（在任何服务器上）：
+
+bash
+git clone https://github.com/yourname/drpy-danmu-integrated.git
+cd drpy-danmu-integrated
+构建镜像：
+
+bash
+docker build -t drpy-danmu:latest .
+运行容器：
+
+bash
+docker run -d --name drpy-danmu -p 5757:5757 -p 9321:9321 --restart=always drpy-danmu:latest
+如果想使用环境变量文件，可以挂载：
+
+bash
+docker run -d --name drpy-danmu -p 5757:5757 -p 9321:9321 -v $(pwd)/.env.danmu:/app/libs/danmu_api/danmu_api/.env --restart=always drpy-danmu:latest
+🔍 注意事项
+danmu_api 的依赖：确保 libs/danmu_api/danmu_api/package.json 中的依赖在 npm install 时能正常安装（可能需要网络访问）。
+
+路径正确性：确认 drpy 的弹幕控制器实际位置为 /app/controllers/danmu.js（从您的容器中看到是这样），所以复制到该路径覆盖。
+
+环境变量：danmu-api 默认会读取 .env 文件，我们在 Dockerfile 中没有内置，但您可以在运行时通过 -e 传递或挂载文件。
+
+持久化数据：如果您想保留 danmu-api 的数据库（如 SQLite），建议挂载数据卷。
+
 ## 改动总览 (mlcp-drpy)
 
 ### 站点与品牌定制
