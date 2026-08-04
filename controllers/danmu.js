@@ -1,50 +1,42 @@
 /**
- * 弹幕控制器
- *
- * 从 TVBox JAR (DanmakuApi.java / LeoDanmakuService) 反编译迁移并优化
- * 主源使用自建 danmu_api，失败后回退到 Vercel 备用接口（均兼容 konfan.cn 接口格式）
- * 匹配逻辑参考 TVBox：年份严格匹配 + 集数多格式候选 + 编辑距离相似度阈值 0.85，
- * 弹幕拉取优先 XML 直通（format=xml），JSON 兜底；结果带 10 分钟缓存去重。
+ * 弹幕控制器 - 本地整合版（修复 XML 重复声明）
+ * 
+ * 整合 danmu-api 到 drpy 内部，所有请求通过本地 127.0.0.1:9321 调用。
  */
 
-import createAxiosInstance from "../utils/createAxiosAgent.js";
+import axios from 'axios';
+import http from 'http';
+import https from 'https';
+import { URL } from 'url';
 
-const _axios = createAxiosInstance({ maxSockets: 64 });
+console.log('[drplayer] 模块加载，弹幕功能已启用（本地 danmu-api）');
+
+// ── 纯净 Axios 实例 ──
+const agentOptions = {
+    keepAlive: true,
+    maxSockets: 64,
+    timeout: 30000,
+    rejectUnauthorized: false
+};
+const httpAgent = new http.Agent(agentOptions);
+const httpsAgent = new https.Agent(agentOptions);
+const cleanAxios = axios.create({ httpAgent, httpsAgent });
 
 // ── 弹幕 API 配置 ──
-const BUILTIN_API = "http://8.130.134.173:9321/";
+const BUILTIN_API = "http://127.0.0.1:9321/";
 const BACKUP_API = "https://danmuapi-1-nu.vercel.app/";
-const BUILTIN_TIMEOUT = 20000;
-const BUILTIN_SEARCH_TIMEOUT = 6000;
-const BUILTIN_MAX_RETRY = 2;
-const BUILTIN_OVERALL_TIMEOUT = 25000;
-
-// ── 弹幕匹配/去重（来自 TVBox LeoDanmakuService）──
-const SIMILARITY_THRESHOLD = 0.85;
+const BUILTIN_TIMEOUT = 15000;
+const BACKUP_TIMEOUT = 10000;
+const BUILTIN_SEARCH_TIMEOUT = 8000;
+const BUILTIN_MAX_RETRY = 1;
+const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
 const danmuResultCache = new Map();
 
-// ── 通用工具函数 ──
-
+// ── 工具函数 ──
 function getRealName(str) {
     if (!str) return "";
     return str.replace(/[（(【<][臻真]彩[）)】>]/g, "").trim();
-}
-
-function parseEpisode(str) {
-    if (!str) return null;
-    let clean = str.replace(/\[.*?\]/g, "");
-    let m = clean.match(/第(\d+)[集话]/);
-    if (m) return parseInt(m[1]);
-    m = clean.match(/S\d+E(\d{2,3})/i);
-    if (m) return parseInt(m[1]);
-    m = clean.match(/·E(\d+)·/i);
-    if (m) return parseInt(m[1]);
-    m = clean.match(/(\d{4})[-._]?(\d{2})[-._]?(\d{2})/);
-    if (m) return parseInt(m[1] + m[2] + m[3]);
-    m = clean.split(".")[0].match(/(\d+)/);
-    if (m) return parseInt(m[1]);
-    return 1;
 }
 
 function extractNumber(text) {
@@ -72,16 +64,14 @@ function escapeXml(text) {
         .replace(/</g, "&lt;");
 }
 
-function safeLog(text) {
-    return text || "";
-}
+function safeLog(text) { return text || ""; }
 
-async function httpGet(url, headers = {}, timeout = 10000, retries = 0) {
+async function httpGet(url, headers = {}, timeout = 10000, retries = 1) {
     let lastError = "";
     for (let attempt = 0; attempt <= retries; attempt++) {
         if (attempt > 0) await delay(1000 * attempt);
         try {
-            const resp = await _axios.get(url, {
+            const resp = await cleanAxios.get(url, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
                     ...headers,
@@ -92,19 +82,14 @@ async function httpGet(url, headers = {}, timeout = 10000, retries = 0) {
             return resp.data;
         } catch (e) {
             lastError = e.message;
-            // 仅超时类错误值得重试（服务间歇性慢）；连接失败/主机不可达直接放弃
-            if (e.code !== "ECONNABORTED") break;
+            if (attempt === retries) break;
         }
     }
-    if (lastError) console.log(`[danmu] httpGet failed: ${safeLog(url)} (${lastError})`);
+    console.log(`[danmu] httpGet failed: ${safeLog(url)} (${lastError})`);
     return "";
 }
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// ── 标题清洗 / 匹配工具（来自 TVBox LeoDanmakuService）──
+function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 function extractYear(str) {
     if (!str) return "";
@@ -125,10 +110,8 @@ function cleanTitle(str) {
 function editDistance(a, b) {
     if (!a || !b) return Math.max((a || "").length, (b || "").length);
     if (a === b) return 0;
-    const m = a.length;
-    const n = b.length;
-    let prev = new Array(n + 1);
-    let curr = new Array(n + 1);
+    const m = a.length, n = b.length;
+    let prev = new Array(n + 1), curr = new Array(n + 1);
     for (let j = 0; j <= n; j++) prev[j] = j;
     for (let i = 1; i <= m; i++) {
         curr[0] = i;
@@ -142,8 +125,7 @@ function editDistance(a, b) {
 }
 
 function calculateSimilarity(a, b) {
-    const x = cleanTitle(a || "");
-    const y = cleanTitle(b || "");
+    const x = cleanTitle(a || ""), y = cleanTitle(b || "");
     if (!x || !y) return 0;
     return 1 - editDistance(x.toLowerCase(), y.toLowerCase()) / Math.max(x.length, y.length);
 }
@@ -151,21 +133,13 @@ function calculateSimilarity(a, b) {
 function generateEpisodeCandidates(num) {
     if (num <= 0) return [];
     const set = new Set();
-    set.add(`第${num}集`);
-    set.add(`第${num}期`);
-    set.add(`第${num}话`);
-    set.add(`第${num}章`);
-    set.add(`第${num}回`);
-    set.add(`_${num}`);
-    set.add(`_${String(num).padStart(2, "0")}`);
+    set.add(`第${num}集`); set.add(`第${num}期`); set.add(`第${num}话`);
+    set.add(`第${num}章`); set.add(`第${num}回`);
+    set.add(`_${num}`); set.add(`_${String(num).padStart(2, "0")}`);
     set.add(`第${String(num).padStart(2, "0")}集`);
     set.add(`第${String(num).padStart(2, "0")}期`);
-    set.add(`[${num}]`);
-    set.add(`(${num})`);
-    set.add(`E${num}`);
-    set.add(`e${num}`);
-    set.add(`EP${num}`);
-    set.add(`ep${num}`);
+    set.add(`[${num}]`); set.add(`(${num})`);
+    set.add(`E${num}`); set.add(`e${num}`); set.add(`EP${num}`); set.add(`ep${num}`);
     return [...set];
 }
 
@@ -202,19 +176,15 @@ function setCachedResult(key, xml) {
     danmuResultCache.set(key, { xml, timestamp: Date.now() });
 }
 
-// ── 颜色规范化（来自 TVBox normalizeDanmakuParam / normalizeColor）──
-
+// ── 颜色规范化 ──
 function isColorValue(value) {
     try {
         if (!value) return false;
         const text = value.trim();
-        if (text.startsWith("#")) return true;
-        if (text.startsWith("0x") || text.startsWith("0X")) return true;
+        if (text.startsWith("#") || text.startsWith("0x") || text.startsWith("0X")) return true;
         const color = parseInt(text);
         return color >= 0 && color <= 0x00ffffff;
-    } catch (e) {
-        return false;
-    }
+    } catch { return false; }
 }
 
 function normalizeColor(color) {
@@ -223,31 +193,20 @@ function normalizeColor(color) {
     try {
         if (text.startsWith("#")) return String(parseInt(text.substring(1), 16));
         if (text.startsWith("0x") || text.startsWith("0X")) return String(parseInt(text.substring(2), 16));
-    } catch (e) {
-        // ignore
-    }
+    } catch {}
     return text;
 }
 
 function normalizeDanmakuParam(param) {
     const values = param.split(",");
     if (values.length < 4) return param;
-    let time = values[0];
-    let type = values[1];
-    let size = values[2];
-    let color = values[3];
-
-    if (isColorValue(size)) {
-        color = size;
-        size = "25";
-    } else if (!isColorValue(color)) {
-        color = "16777215";
-    }
+    let time = values[0], type = values[1], size = values[2], color = values[3];
+    if (isColorValue(size)) { color = size; size = "25"; }
+    else if (!isColorValue(color)) { color = "16777215"; }
     return time + "," + type + "," + size + "," + normalizeColor(color);
 }
 
-// ── 自建 danmu_api 弹幕搜索 ──
-
+// ── API 交互函数 ──
 function normalizeBaseUrl(apiUrl) {
     let url = (apiUrl || "").trim();
     if (url.endsWith("/")) url = url.substring(0, url.length - 1);
@@ -266,22 +225,10 @@ function getNextEpisodeQueryMode(episode, queryMode) {
     return -1;
 }
 
-function isMovieTypeText(type) {
-    return type === "\u7535\u5f71";
-}
-
-function isMandarinTitle(title) {
-    return title && (title.includes("\u56fd\u8bed") || title.includes("\u666e\u901a\u8bdd"));
-}
-
-function isCantoneseTitle(title) {
-    return title && title.includes("\u7ca4\u8bed");
-}
-
-function prefersCantonese(episode) {
-    return isCantoneseTitle(episode);
-}
-
+function isMovieTypeText(type) { return type === "电影"; }
+function isMandarinTitle(title) { return title && (title.includes("国语") || title.includes("普通话")); }
+function isCantoneseTitle(title) { return title && title.includes("粤语"); }
+function prefersCantonese(episode) { return isCantoneseTitle(episode); }
 function isPreferredLanguageTitle(title, preferCantonese) {
     return preferCantonese ? isCantoneseTitle(title) : isMandarinTitle(title);
 }
@@ -302,25 +249,20 @@ function findAnimeId(body) {
         const item = array[0];
         if (!item) return "";
         return item.animeId || item.id || "";
-    } catch (e) {
-        return "";
-    }
+    } catch { return ""; }
 }
 
 function findEpisodeList(obj) {
     if (Array.isArray(obj)) {
         return { episodes: obj, isMovie: false };
     }
-
     let array = obj.episodes;
     if (array) return { episodes: array, isMovie: isMovieTypeText(obj.type || obj.typeDescription || "") };
-
     const bangumi = obj.bangumi;
     if (bangumi) {
         array = bangumi.episodes;
         if (array) return { episodes: array, isMovie: isMovieTypeText(bangumi.type || bangumi.typeDescription || "") };
     }
-
     let animes = obj.animes || obj.anime || obj.data;
     if (animes && Array.isArray(animes)) {
         for (const item of animes) {
@@ -357,9 +299,7 @@ function isSearchEpisodesMovieResult(body) {
         for (const anime of animes) {
             if (anime && isMovieType(anime) && anime.episodes) return true;
         }
-    } catch (e) {
-        // ignore
-    }
+    } catch {}
     return false;
 }
 
@@ -397,10 +337,9 @@ function findEpisode(body, episode, allowMovieFallback = true) {
         const targetNumber = extractNumber(episode);
         const episodeCandidates = generateEpisodeCandidates(targetNumber);
         const year = extractYear(episode || "");
-        let first = null;
-        let firstMandarin = null;
-        let bestMatch = null;
-        let bestScore = 0;
+        let first = null, firstMandarin = null;
+        let bestMatch = null, bestScore = 0;
+        let bestWithYear = null, bestScoreWithYear = 0;
 
         for (const item of episodes) {
             if (!item) continue;
@@ -413,9 +352,10 @@ function findEpisode(body, episode, allowMovieFallback = true) {
             if (!first) first = match;
             if (!firstMandarin && isMandarinTitle(title)) firstMandarin = match;
 
-            // 年份严格匹配（要求搜索集数带年份时命中）
-            if (year && animeTitle && !animeTitle.includes(year) && title && !title.includes(year)) {
-                continue;
+            let hasYear = true;
+            if (year) {
+                const titleHasYear = (title && title.includes(year)) || (animeTitle && animeTitle.includes(year));
+                if (!titleHasYear) hasYear = false;
             }
 
             if (episode && title && title.includes(episode)) return match;
@@ -423,20 +363,20 @@ function findEpisode(body, episode, allowMovieFallback = true) {
             if (targetNumber > 0 && number === targetNumber) return match;
             if (targetNumber > 0 && extractNumber(title) === targetNumber) return match;
 
-            // 相似度匹配（TVBox 阈值 0.85）
             const score = Math.max(calculateSimilarity(animeTitle || "", episode || ""), calculateSimilarity(title || "", episode || ""));
-            if (score > bestScore) {
-                bestScore = score;
-                bestMatch = match;
+            if (hasYear) {
+                if (score > bestScoreWithYear) { bestScoreWithYear = score; bestWithYear = match; }
+            } else {
+                if (score > bestScore) { bestScore = score; bestMatch = match; }
             }
         }
+
+        if (bestWithYear && bestScoreWithYear >= SIMILARITY_THRESHOLD) return bestWithYear;
         if (bestMatch && bestScore >= SIMILARITY_THRESHOLD) return bestMatch;
         if (!episode) return first;
         if (allowMovieFallback && episodeList.isMovie) return firstMandarin || first;
         return null;
-    } catch (e) {
-        return null;
-    }
+    } catch { return null; }
 }
 
 function findEpisodeFromSearchEpisodes(body, episode) {
@@ -449,9 +389,7 @@ function findEpisodeFromSearchEpisodes(body, episode) {
             console.log(`[danmu] episodes movie fallback episode: ${safeLog(movieFallback.title)}, episodeId: ${movieFallback.id}`);
         }
         return movieFallback;
-    } catch (e) {
-        return null;
-    }
+    } catch { return null; }
 }
 
 function commentJsonToXml(body) {
@@ -473,28 +411,20 @@ function commentJsonToXml(body) {
         xml += "</i>";
         console.log(`[danmu] builtin xml length: ${xml.length}, 弹幕条数: ${count}`);
         return { xml, count };
-    } catch (e) {
-        return { xml: "", count: 0 };
-    }
+    } catch { return { xml: "", count: 0 }; }
 }
-
-// ── 自建 danmu_api 完整搜索流程 ──
 
 async function loadBuiltinComment(baseUrl, title, episode, episodeMatch) {
     const commentUrl = `${baseUrl}/api/v2/comment/${episodeMatch.id}?format=xml`;
-    console.log(`[danmu] builtin load title: ${safeLog(title)}, request episode: ${safeLog(episode)}, matched episode: ${safeLog(episodeMatch.title)}, matched number: ${episodeMatch.number}, episodeId: ${episodeMatch.id}`);
-    console.log(`[danmu] builtin comment: ${commentUrl}`);
-
+    console.log(`[danmu] builtin load title: ${safeLog(title)}, episode: ${safeLog(episode)}, matched: ${safeLog(episodeMatch.title)}, id: ${episodeMatch.id}`);
     const body = await httpGet(commentUrl, {}, BUILTIN_TIMEOUT, BUILTIN_MAX_RETRY);
-
     if (body && body.trim().startsWith("<")) {
         const count = countXmlDanmaku(body);
         console.log(`[danmu] builtin xml direct count: ${count}`);
         return { xml: body, count };
     }
-
     const jsonUrl = `${baseUrl}/api/v2/comment/${episodeMatch.id}?format=json`;
-    console.log(`[danmu] builtin comment xml unavailable, fallback json: ${jsonUrl}`);
+    console.log(`[danmu] fallback json: ${jsonUrl}`);
     const jsonBody = await httpGet(jsonUrl, {}, BUILTIN_TIMEOUT, BUILTIN_MAX_RETRY);
     if (!jsonBody) return { xml: "", count: 0 };
     return commentJsonToXml(jsonBody);
@@ -509,8 +439,7 @@ async function loadBuiltinBangumi(baseUrl, animeId, episode) {
 
 async function searchBuiltinAnime(baseUrl, name, episode) {
     const searchUrl = `${baseUrl}/api/v2/search/anime?keyword=${encodeURIComponent(name)}`;
-    console.log(`[danmu] builtin search anime: ${searchUrl}`);
-
+    console.log(`[danmu] search anime: ${searchUrl}`);
     const body = await httpGet(searchUrl, {}, BUILTIN_SEARCH_TIMEOUT, 1);
     if (!body) return null;
     const animeId = findAnimeId(body);
@@ -524,139 +453,165 @@ async function searchBuiltinEpisodes(baseUrl, name, episode, queryMode = 0) {
     if (episodeQuery) searchUrl += `&episode=${encodeURIComponent(episodeQuery)}`;
 
     let body = await httpGet(searchUrl, {}, BUILTIN_SEARCH_TIMEOUT, 1);
-
-    // 旧前缀回退（TVBox：空响应时回退到 /search/episodes）
     if (!body) {
         const fallbackUrl = `${baseUrl}/search/episodes?anime=${encodeURIComponent(name)}`;
-        console.log(`[danmu] builtin fallback search: ${fallbackUrl}`);
+        console.log(`[danmu] fallback search: ${fallbackUrl}`);
         body = await httpGet(fallbackUrl, {}, BUILTIN_SEARCH_TIMEOUT, 1);
     }
     if (!body) return null;
 
     const episodeMatch = findEpisodeFromSearchEpisodes(body, episode);
     if (episodeMatch) return episodeMatch;
-
     if (isSearchEpisodesMovieResult(body)) {
-        console.log(`[danmu] builtin movie result not matched, skip anime fallback`);
+        console.log(`[danmu] movie result not matched, skip anime`);
         return null;
     }
-
     const nextMode = getNextEpisodeQueryMode(episode, queryMode);
     if (nextMode >= 0) {
-        console.log(`[danmu] builtin retry episodes query mode: ${queryMode} -> ${nextMode}`);
+        console.log(`[danmu] retry query mode: ${queryMode} -> ${nextMode}`);
         return searchBuiltinEpisodes(baseUrl, name, episode, nextMode);
     }
-
-    console.log(`[danmu] builtin episode not matched, title: ${safeLog(name)}, episode: ${safeLog(episode)}`);
+    console.log(`[danmu] episode not matched: ${safeLog(name)}, ep: ${safeLog(episode)}`);
     return null;
 }
 
 async function searchDanmuFromApi(baseUrl, name, episode) {
     const base = normalizeBaseUrl(baseUrl);
     const epNum = episode || 1;
-
     const cacheKey = getCacheKey(base, name, epNum);
     const cached = getCachedResult(cacheKey);
     if (cached) {
-        console.log(`[danmu] builtin cache hit: ${safeLog(name)}, episode: ${epNum}`);
+        console.log(`[danmu] cache hit: ${safeLog(name)}, ep: ${epNum}`);
         return { xml: cached, count: countXmlDanmaku(cached) };
     }
 
-    // 步骤1: 搜索 episodes
     let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
     if (episodeMatch) {
         const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) {
-            setCachedResult(cacheKey, result.xml);
-            return result;
-        }
+        if (result.xml) { setCachedResult(cacheKey, result.xml); return result; }
     }
-
-    // 步骤2: 搜索 anime
     episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
     if (episodeMatch) {
         const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) {
-            setCachedResult(cacheKey, result.xml);
-            return result;
-        }
+        if (result.xml) { setCachedResult(cacheKey, result.xml); return result; }
     }
-
-    console.log(`[danmu] builtin episode not found, title: ${safeLog(name)}, episode: ${epNum}`);
+    console.log(`[danmu] no result: ${safeLog(name)}, ep: ${epNum}`);
     return { xml: "", count: 0 };
 }
 
-// ── 弹幕 XML 组装 ──
-
-/**
- * 将弹幕内容组装为带弹幕数量提示的完整弹幕 XML
- *
- * 输出规格：
- * - <i count="X"> 根节点携带弹幕总数
- * - <chatid>X</chatid> 值为弹幕总数
- * - <source>匹配到 X 条弹幕</source>（无弹幕时为"暂无弹幕"）
- *
- * 客户端在解析弹幕 XML 时读取 <chatid>/<source> 的值来触发 Toast 弹窗提示。
- * 仅统计成功返回的弹幕条数（<d> 标签数量），避免额外请求。
- */
+// ── 修复后的 buildDanmuXml 函数 ──
 function buildDanmuXml(innerXml, count) {
-    const content = innerXml.replace(/^\s*<i>/, "").replace(/<\/i>\s*$/, "").trim();
+    let content = "";
+    if (innerXml) {
+        // 提取 <i>...</i> 内部的内容，去除所有 XML 声明和外部标签
+        const match = innerXml.match(/<i[^>]*>([\s\S]*?)<\/i>/);
+        if (match) {
+            content = match[1].trim();
+        } else {
+            // 如果没有 <i>，直接去除 XML 声明
+            content = innerXml.replace(/<\?xml.*?\?>/, "").trim();
+        }
+    }
     const hint = count > 0 ? `匹配到 ${count} 条弹幕` : "暂无弹幕";
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<i count="${count}">\n  <chatserver></chatserver>\n  <chatid>${count}</chatid>\n  <source>${hint}</source>\n${content ? content + "\n" : ""}</i>`;
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<i>\n  <chatserver></chatserver>\n  <chatid>${count}</chatid>\n  <source>${hint}</source>\n${content ? content + "\n" : ""}</i>`;
 }
 
 // ── 路由注册 ──
-
-export default (fastify, options, done) => {
-    fastify.get("/danmu", async (req, reply) => {
-        const name = req.query.name || req.query.vodName || "";
-        const episode = (req.query.episode || req.query.vodIndex || "1").trim();
-
-        console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
-
-        if (!name) {
-            reply.header("Content-Type", "application/xml; charset=utf-8");
-            return reply.send('<?xml version="1.0" encoding="UTF-8"?>\n<i></i>');
-        }
-
-        const realName = getRealName(name);
-        console.log(`[danmu] realName=${realName}`);
-
-        let danmakuXml = "";
-        let danmakuResult = { xml: "", count: 0 };
-
-        const doSearch = async () => {
-            // 主源：自建 danmu_api
-            console.log(`[danmu] 尝试自建 danmu_api 主接口...`);
-            let result = await searchDanmuFromApi(BUILTIN_API, realName, episode);
-
-            if (!result.xml) {
-                // 备用源：Vercel 部署接口
-                console.log(`[danmu] 主接口无结果，尝试 Vercel 备用接口...`);
-                result = await searchDanmuFromApi(BACKUP_API, realName, episode);
-            }
-            return result;
-        };
-
-        // 总超时保护（外部服务间歇性超时，超时则优雅返回空弹幕）
-        const overallTimer = delay(BUILTIN_OVERALL_TIMEOUT).then(() => ({ xml: "", count: 0, timedOut: true }));
-        danmakuResult = await Promise.race([doSearch(), overallTimer]);
-        if (danmakuResult.timedOut) {
-            console.log(`[danmu] overall timeout (${BUILTIN_OVERALL_TIMEOUT}ms), return empty`);
-        }
-
-        if (danmakuResult.xml) {
-            danmakuXml = buildDanmuXml(danmakuResult.xml, danmakuResult.count);
-            console.log(`[danmu] danmu_api 成功, 弹幕条数: ${danmakuResult.count}`);
-        }
-
-        if (!danmakuXml) {
-            danmakuXml = buildDanmuXml("", 0);
-        }
-
-        reply.header("Content-Type", "application/xml; charset=utf-8");
-        return reply.send(danmakuXml);
+export default async function(fastify, opts) {
+    // 测试路由
+    fastify.get('/danmu/ping', async (req, reply) => {
+        reply.send({ status: 'ok', module: 'drplayer/danmu' });
     });
 
-    done();
-};
+    // 主弹幕接口
+    fastify.get('/danmu', async (req, reply) => {
+        try {
+            const name = req.query.name || req.query.vodName || '';
+            const episode = (req.query.episode || req.query.vodIndex || '1').trim();
+
+            console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
+
+            if (!name) {
+                reply.header('Content-Type', 'application/xml; charset=utf-8');
+                reply.header('Access-Control-Allow-Origin', '*');
+                return reply.send('<?xml version="1.0" encoding="UTF-8"?>\n<i></i>');
+            }
+
+            const realName = getRealName(name);
+            console.log(`[danmu] realName=${realName}`);
+
+            let danmakuResult = { xml: '', count: 0 };
+
+            // 主接口
+            try {
+                console.log(`[danmu] 尝试主接口...`);
+                danmakuResult = await searchDanmuFromApi(BUILTIN_API, realName, episode);
+            } catch (e) {
+                console.warn(`[danmu] 主接口异常: ${e.message}`);
+            }
+
+            // 备用
+            if (!danmakuResult.xml) {
+                try {
+                    console.log(`[danmu] 尝试备用接口...`);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode);
+                } catch (e) {
+                    console.warn(`[danmu] 备用接口异常: ${e.message}`);
+                }
+            }
+
+            const danmakuXml = danmakuResult.xml ? buildDanmuXml(danmakuResult.xml, danmakuResult.count) : buildDanmuXml('', 0);
+            if (danmakuResult.xml) {
+                console.log(`[danmu] 成功返回弹幕, 条数: ${danmakuResult.count}`);
+            } else {
+                console.log(`[danmu] 未获取到弹幕，返回空`);
+            }
+
+            reply.header('Content-Type', 'application/xml; charset=utf-8');
+            reply.header('Access-Control-Allow-Origin', '*');
+            return reply.send(danmakuXml);
+        } catch (error) {
+            console.error(`[danmu] 路由处理异常:`, error.stack || error.message);
+            reply.header('Content-Type', 'application/xml; charset=utf-8');
+            reply.header('Access-Control-Allow-Origin', '*');
+            return reply.send(`<?xml version="1.0" encoding="UTF-8"?>
+<i>
+  <chatserver></chatserver>
+  <chatid>0</chatid>
+  <source>服务内部错误</source>
+</i>`);
+        }
+    });
+
+    // 管理接口：清除缓存（支持 path 参数）
+    fastify.get('/action', async (req, reply) => {
+        const { do: action, type, path, name, episode } = req.query;
+        if (action === 'refresh' && type === 'danmaku') {
+            let targetName = name;
+            let targetEpisode = episode;
+            if (!targetName && path) {
+                try {
+                    const urlObj = new URL(path, 'http://dummy');
+                    targetName = urlObj.searchParams.get('name') || '';
+                    targetEpisode = urlObj.searchParams.get('episode') || '1';
+                } catch {}
+            }
+            if (!targetName) {
+                reply.send({ code: 400, msg: '缺少 name 参数' });
+                return;
+            }
+            const base = normalizeBaseUrl(BUILTIN_API);
+            const cacheKey = getCacheKey(base, targetName, targetEpisode || '1');
+            const cached = danmuResultCache.get(cacheKey);
+            if (cached) {
+                danmuResultCache.delete(cacheKey);
+                console.log(`[action] 已清除缓存: ${cacheKey}`);
+                reply.send({ code: 200, msg: '缓存已清除', key: cacheKey });
+            } else {
+                reply.send({ code: 404, msg: '未找到对应缓存', key: cacheKey });
+            }
+            return;
+        }
+        reply.send({ code: 400, msg: '不支持的 action 或 type' });
+    });
+}
