@@ -30,7 +30,10 @@ const BACKUP_API = "https://danmuapi-1-nu.vercel.app/";
 const BUILTIN_TIMEOUT = 15000;
 const BACKUP_TIMEOUT = 10000;
 const BUILTIN_SEARCH_TIMEOUT = 8000;
-const BUILTIN_MAX_RETRY = 1;
+const BUILTIN_MAX_RETRY = 0;
+const FONGMI_SEARCH_TIMEOUT = 8000;
+const FONGMI_COMMENT_TIMEOUT = 10000;
+const TOTAL_SEARCH_BUDGET = 10000;
 const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
 const danmuResultCache = new LRUCache({ max: 1000, ttl: DANMU_CACHE_TTL });
@@ -521,6 +524,73 @@ async function searchBuiltinEpisodes(baseUrl, name, episode, queryMode = 0) {
     return null;
 }
 
+function matchFongmiItem(items, episode) {
+    if (!items || !items.length) return null;
+    const num = extractNumber(String(episode));
+    const candidates = num > 0 ? generateEpisodeCandidates(num) : [];
+    const epText = String(episode || "").trim();
+    if (epText && epText !== "1") {
+        const exact = items.find(it => it && it.name && it.name.includes(epText));
+        if (exact) return exact;
+    }
+    if (candidates.length) {
+        for (const it of items) {
+            if (!it || !it.name) continue;
+            const lower = it.name.toLowerCase();
+            if (candidates.some(c => lower.includes(c.toLowerCase()))) return it;
+        }
+    }
+    return items[0] || null;
+}
+
+function normalizeCommentUrl(url, base) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) {
+        try {
+            const u = new URL(url);
+            const b = new URL(base);
+            u.protocol = b.protocol;
+            u.host = b.host;
+            return u.toString();
+        } catch (e) { return url; }
+    }
+    if (url.startsWith("/")) return base + url;
+    return base + "/" + url;
+}
+
+async function searchDanmuFromFongmi(baseUrl, name, episode) {
+    const base = normalizeBaseUrl(baseUrl);
+    const epNum = (() => {
+        const n = extractNumber(String(episode));
+        return n > 0 ? String(n) : String(episode || 1);
+    })();
+    const cacheKey = getCacheKey(base + "#fongmi", name, epNum);
+    const cached = getCachedResult(cacheKey);
+    if (cached) {
+        console.log(`[danmu] fongmi cache hit: ${safeLog(name)}, ep: ${epNum}`);
+        return cached;
+    }
+    const searchUrl = `${base}/api/v2/fongmi/danmaku?name=${encodeURIComponent(name)}&episode=${encodeURIComponent(epNum)}`;
+    const body = await httpGet(searchUrl, {}, FONGMI_SEARCH_TIMEOUT, 0);
+    if (!body) return { xml: "", json: [], count: 0 };
+    let items;
+    try { items = JSON.parse(body); } catch (e) { return { xml: "", json: [], count: 0 }; }
+    if (!Array.isArray(items) || items.length === 0) return { xml: "", json: [], count: 0 };
+
+    const target = matchFongmiItem(items, epNum);
+    const commentUrl = normalizeCommentUrl(target && target.url, base);
+    console.log(`[danmu] fongmi matched: ${safeLog(target && target.name)}, commentUrl: ${safeLog(commentUrl)}`);
+    if (!commentUrl) return { xml: "", json: [], count: 0 };
+
+    const xml = await httpGet(commentUrl, {}, FONGMI_COMMENT_TIMEOUT, 0);
+    if (!xml || !xml.trim().startsWith("<")) return { xml: "", json: [], count: 0 };
+    const count = countXmlDanmaku(xml);
+    const result = { xml, json: xmlToArtplayerJson(xml), count };
+    if (count > 0) setCachedResult(cacheKey, result);
+    console.log(`[danmu] fongmi result: 条数 ${count}`);
+    return result;
+}
+
 async function searchDanmuFromApi(baseUrl, name, episode) {
     const base = normalizeBaseUrl(baseUrl);
     const epNum = episode || 1;
@@ -531,18 +601,35 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
         return cached;
     }
 
-    let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
-    if (episodeMatch) {
-        const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) { setCachedResult(cacheKey, result); return result; }
+    const empty = { xml: "", json: [], count: 0 };
+    try {
+        return await Promise.race([
+            (async () => {
+                const fongmiResult = await searchDanmuFromFongmi(base, name, String(epNum));
+                if (fongmiResult.xml) { setCachedResult(cacheKey, fongmiResult); return fongmiResult; }
+
+                let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
+                if (episodeMatch) {
+                    const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
+                    if (result.xml) { setCachedResult(cacheKey, result); return result; }
+                }
+                episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
+                if (episodeMatch) {
+                    const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
+                    if (result.xml) { setCachedResult(cacheKey, result); return result; }
+                }
+                console.log(`[danmu] no result: ${safeLog(name)}, ep: ${epNum}`);
+                return empty;
+            })(),
+            delay(TOTAL_SEARCH_BUDGET).then(() => {
+                console.log(`[danmu] 搜索超时(${TOTAL_SEARCH_BUDGET}ms), 返回空: ${safeLog(name)}, ep: ${epNum}`);
+                return empty;
+            })
+        ]);
+    } catch (e) {
+        console.warn(`[danmu] 搜索异常: ${e.message}`);
+        return empty;
     }
-    episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
-    if (episodeMatch) {
-        const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) { setCachedResult(cacheKey, result); return result; }
-    }
-    console.log(`[danmu] no result: ${safeLog(name)}, ep: ${epNum}`);
-    return { xml: "", json: [], count: 0 };
 }
 
 // ── 修复后的 buildDanmuXml 函数 ──
