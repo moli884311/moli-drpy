@@ -682,9 +682,11 @@ export default async function(fastify, opts) {
 
             if (!name) return sendEmpty();
 
-            if (danmuApiKey && (req.query.pwd || req.query.token || '') !== danmuApiKey) {
-                console.warn(`[danmu] token 校验失败`);
-                return reply.code(403).send('unauthorized');
+            if (req.query.pwd || req.query.token) {
+                if ((req.query.pwd || req.query.token || '') !== danmuApiKey) {
+                    console.warn(`[danmu] token 校验失败`);
+                    return reply.code(403).send('unauthorized');
+                }
             }
 
             const realName = getRealName(name);
