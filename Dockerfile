@@ -14,18 +14,14 @@ RUN rm -rf drpy-node-admin drpy-node-bundle drpy-node-mcp drpy2-quickjs
 # 安装 drpy 依赖
 RUN yarn && yarn add puppeteer
 
-# --- 新增：复制 danmu-api 源码 ---
-# 假设 danmu-api 源码位于当前构建上下文中的 libs/danmu_api 目录
-# 您需要将 danmu_api 文件夹放在与 Dockerfile 同级的 libs/ 下
-COPY libs/danmu_api /app/libs/danmu_api
+# --- 新增：复制 danmu-api 源码（仓库路径 libs_drpy/danmu_api） ---
+COPY libs_drpy/danmu_api /app/libs_drpy/danmu_api
 
-# 进入 danmu-api 目录安装其依赖
-RUN cd /app/libs/danmu_api/danmu_api && npm install --production
+# --- 新增：进入正确目录安装 danmu-api 依赖（package.json 在 libs_drpy/danmu_api/ 下） ---
+RUN cd /app/libs_drpy/danmu_api && npm install --production
 
-# --- 新增：复制修改后的 drpy 弹幕控制器 ---
-# 将您修改后的 index.js（即 danmu.js）复制到正确位置覆盖原文件
-# 注意原路径是 controllers/danmu.js，但您的修改文件我们命名为 danmu.js
-COPY apps/drplayer/index.js /app/controllers/danmu.js
+# --- 新增：复制修改后的弹幕控制器（仓库已有 controllers/danmu.js，无需再取 apps/drplayer） ---
+COPY controllers/danmu.js /app/controllers/danmu.js
 
 # 准备临时目录用于运行阶段
 RUN mkdir -p /tmp/drpys && cp -r /app/. /tmp/drpys/
@@ -53,10 +49,6 @@ RUN ln -sf /usr/bin/php83 /usr/bin/php
 RUN python3 -m venv /app/.venv && \
     . /app/.venv/bin/activate && \
     pip3 install -r /app/spider/py/base/requirements.txt
-
-# --- 新增：复制 danmu-api 的环境变量配置（可选） ---
-# 如果您有预设的 .env 配置，可以复制到对应位置
-# 例如：COPY .env.danmu /app/libs/danmu_api/danmu_api/.env
 
 # --- 新增：复制启动脚本 ---
 COPY entrypoint.sh /entrypoint.sh

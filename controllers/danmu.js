@@ -8,6 +8,7 @@ import axios from 'axios';
 import http from 'http';
 import https from 'https';
 import { URL } from 'url';
+import { LRUCache } from 'lru-cache';
 
 console.log('[drplayer] 模块加载，弹幕功能已启用（本地 danmu-api）');
 
@@ -31,7 +32,8 @@ const BUILTIN_SEARCH_TIMEOUT = 8000;
 const BUILTIN_MAX_RETRY = 1;
 const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
-const danmuResultCache = new Map();
+const danmuResultCache = new LRUCache({ max: 1000, ttl: DANMU_CACHE_TTL });
+const danmuApiKey = process.env.DANMU_API_KEY || '';
 
 // ── 工具函数 ──
 function getRealName(str) {
@@ -162,18 +164,12 @@ function getCacheKey(apiBase, name, episode) {
 }
 
 function getCachedResult(key) {
-    const entry = danmuResultCache.get(key);
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > DANMU_CACHE_TTL) {
-        danmuResultCache.delete(key);
-        return null;
-    }
-    return entry.xml;
+    return danmuResultCache.get(key) || null;
 }
 
-function setCachedResult(key, xml) {
-    if (!xml) return;
-    danmuResultCache.set(key, { xml, timestamp: Date.now() });
+function setCachedResult(key, result) {
+    if (!result || !result.xml) return;
+    danmuResultCache.set(key, result);
 }
 
 // ── 颜色规范化 ──
@@ -414,6 +410,54 @@ function commentJsonToXml(body) {
     } catch { return { xml: "", count: 0 }; }
 }
 
+function artplayerItem(text, time, mode, colorNum) {
+    let color = "#ffffff";
+    if (!Number.isNaN(colorNum) && colorNum >= 0) {
+        color = "#" + colorNum.toString(16).padStart(6, "0");
+    }
+    const type = mode === 4 ? "top" : mode === 5 ? "bottom" : "right";
+    return { text, time, color, type };
+}
+
+function xmlToArtplayerJson(xml) {
+    if (!xml || typeof xml !== "string") return [];
+    const result = [];
+    const regex = /<d p="([^"]*)">([\s\S]*?)<\/d>/g;
+    let match;
+    while ((match = regex.exec(xml)) !== null) {
+        const values = (match[1] || "").split(",");
+        const time = parseFloat(values[0]);
+        if (Number.isNaN(time)) continue;
+        const text = match[2] || "";
+        if (!text.trim()) continue;
+        const mode = parseInt(values[1]);
+        const colorText = isColorValue(values[3]) ? values[3] : (isColorValue(values[2]) ? values[2] : "");
+        result.push(artplayerItem(text, time, mode, parseInt(colorText)));
+    }
+    return result;
+}
+
+function commentJsonToArtplayer(body) {
+    try {
+        const obj = JSON.parse(body);
+        let comments = obj.comments || obj.data;
+        if (!comments || !Array.isArray(comments)) return [];
+        const result = [];
+        for (const item of comments) {
+            if (!item) continue;
+            const param = item.p || "";
+            const text = item.m || item.text || "";
+            if (!param || !text) continue;
+            const values = param.split(",");
+            const time = parseFloat(values[0]);
+            if (Number.isNaN(time)) continue;
+            const mode = parseInt(values[1]);
+            result.push(artplayerItem(text, time, mode, parseInt(values[2])));
+        }
+        return result;
+    } catch { return []; }
+}
+
 async function loadBuiltinComment(baseUrl, title, episode, episodeMatch) {
     const commentUrl = `${baseUrl}/api/v2/comment/${episodeMatch.id}?format=xml`;
     console.log(`[danmu] builtin load title: ${safeLog(title)}, episode: ${safeLog(episode)}, matched: ${safeLog(episodeMatch.title)}, id: ${episodeMatch.id}`);
@@ -421,13 +465,14 @@ async function loadBuiltinComment(baseUrl, title, episode, episodeMatch) {
     if (body && body.trim().startsWith("<")) {
         const count = countXmlDanmaku(body);
         console.log(`[danmu] builtin xml direct count: ${count}`);
-        return { xml: body, count };
+        return { xml: body, json: xmlToArtplayerJson(body), count };
     }
     const jsonUrl = `${baseUrl}/api/v2/comment/${episodeMatch.id}?format=json`;
     console.log(`[danmu] fallback json: ${jsonUrl}`);
     const jsonBody = await httpGet(jsonUrl, {}, BUILTIN_TIMEOUT, BUILTIN_MAX_RETRY);
-    if (!jsonBody) return { xml: "", count: 0 };
-    return commentJsonToXml(jsonBody);
+    if (!jsonBody) return { xml: "", json: [], count: 0 };
+    const result = commentJsonToXml(jsonBody);
+    return { xml: result.xml, json: commentJsonToArtplayer(jsonBody), count: result.count };
 }
 
 async function loadBuiltinBangumi(baseUrl, animeId, episode) {
@@ -482,21 +527,21 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
     const cached = getCachedResult(cacheKey);
     if (cached) {
         console.log(`[danmu] cache hit: ${safeLog(name)}, ep: ${epNum}`);
-        return { xml: cached, count: countXmlDanmaku(cached) };
+        return cached;
     }
 
     let episodeMatch = await searchBuiltinEpisodes(base, name, String(epNum));
     if (episodeMatch) {
         const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) { setCachedResult(cacheKey, result.xml); return result; }
+        if (result.xml) { setCachedResult(cacheKey, result); return result; }
     }
     episodeMatch = await searchBuiltinAnime(base, name, String(epNum));
     if (episodeMatch) {
         const result = await loadBuiltinComment(base, name, String(epNum), episodeMatch);
-        if (result.xml) { setCachedResult(cacheKey, result.xml); return result; }
+        if (result.xml) { setCachedResult(cacheKey, result); return result; }
     }
     console.log(`[danmu] no result: ${safeLog(name)}, ep: ${epNum}`);
-    return { xml: "", count: 0 };
+    return { xml: "", json: [], count: 0 };
 }
 
 // ── 修复后的 buildDanmuXml 函数 ──
@@ -525,22 +570,39 @@ export default async function(fastify, opts) {
 
     // 主弹幕接口
     fastify.get('/danmu', async (req, reply) => {
+        const format = (req.query.format || 'xml').toLowerCase();
+        const sendEmpty = (msg = '') => {
+            reply.header('Access-Control-Allow-Origin', '*');
+            if (format === 'json') {
+                reply.header('Content-Type', 'application/json; charset=utf-8');
+                return reply.send([]);
+            }
+            reply.header('Content-Type', 'application/xml; charset=utf-8');
+            if (!msg) return reply.send('<?xml version="1.0" encoding="UTF-8"?>\n<i></i>');
+            return reply.send(`<?xml version="1.0" encoding="UTF-8"?>
+<i>
+  <chatserver></chatserver>
+  <chatid>0</chatid>
+  <source>${msg}</source>
+</i>`);
+        };
         try {
             const name = req.query.name || req.query.vodName || '';
             const episode = (req.query.episode || req.query.vodIndex || '1').trim();
 
             console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
 
-            if (!name) {
-                reply.header('Content-Type', 'application/xml; charset=utf-8');
-                reply.header('Access-Control-Allow-Origin', '*');
-                return reply.send('<?xml version="1.0" encoding="UTF-8"?>\n<i></i>');
+            if (!name) return sendEmpty();
+
+            if (danmuApiKey && req.query.token !== danmuApiKey) {
+                console.warn(`[danmu] token 校验失败`);
+                return reply.code(403).send('unauthorized');
             }
 
             const realName = getRealName(name);
             console.log(`[danmu] realName=${realName}`);
 
-            let danmakuResult = { xml: '', count: 0 };
+            let danmakuResult = { xml: '', json: [], count: 0 };
 
             // 主接口
             try {
@@ -560,26 +622,25 @@ export default async function(fastify, opts) {
                 }
             }
 
-            const danmakuXml = danmakuResult.xml ? buildDanmuXml(danmakuResult.xml, danmakuResult.count) : buildDanmuXml('', 0);
             if (danmakuResult.xml) {
                 console.log(`[danmu] 成功返回弹幕, 条数: ${danmakuResult.count}`);
             } else {
                 console.log(`[danmu] 未获取到弹幕，返回空`);
             }
 
+            if (format === 'json') {
+                reply.header('Content-Type', 'application/json; charset=utf-8');
+                reply.header('Access-Control-Allow-Origin', '*');
+                return reply.send(danmakuResult.json || []);
+            }
+
+            const danmakuXml = danmakuResult.xml ? buildDanmuXml(danmakuResult.xml, danmakuResult.count) : buildDanmuXml('', 0);
             reply.header('Content-Type', 'application/xml; charset=utf-8');
             reply.header('Access-Control-Allow-Origin', '*');
             return reply.send(danmakuXml);
         } catch (error) {
             console.error(`[danmu] 路由处理异常:`, error.stack || error.message);
-            reply.header('Content-Type', 'application/xml; charset=utf-8');
-            reply.header('Access-Control-Allow-Origin', '*');
-            return reply.send(`<?xml version="1.0" encoding="UTF-8"?>
-<i>
-  <chatserver></chatserver>
-  <chatid>0</chatid>
-  <source>服务内部错误</source>
-</i>`);
+            return sendEmpty('服务内部错误');
         }
     });
 
