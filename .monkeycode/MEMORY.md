@@ -72,3 +72,13 @@ Entries discovered by the Agent during task execution should follow this format:
   - `controllers/danmu.js` uses a 25s overall timeout wrapper (Promise.race) so the route always returns a valid empty XML ("暂无弹幕") even when external sources hang; retries are applied only to timeout-class errors (ECONNABORTED), connection failures break immediately; search endpoints use 6s timeout with 1 retry, comment/bangumi use 20s with 2 retries.
   - Keep `req.query.episode` as a raw string (e.g. "第3集"), do NOT `parseInt` it — candidate matching needs the string; `extractNumber` pulls the digit.
   - A 10-minute result cache (`danmuResultCache`) dedupes identical `base+name+episode` lookups.
+
+[Project Knowledge Summary]
+- Date: 2026-08-05
+- Context: Discovered by Agent while debugging "弹幕没了" on the production deploy of moli-drpy
+- Category: Operations & Deployment
+- Instructions:
+  - Production servers: `http://8.130.134.173:5757` is the drpy main service (danmu routes live here); `http://8.130.134.173:9321` is the danmu-api instance and is publicly reachable. Both health checks via `curl`.
+  - danmu-api `/api/v2/search/episodes` (multi-platform aggregation) takes ~10s EVERY time for a title with no danmu results (no-result responses are NOT cached); results ARE cached (2nd identical call ~0.1s). The un-prefixed `/search/episodes` is only fast because it hits that same cache.
+  - Prefer `/api/v2/fongmi/danmaku?name=剧名&episode=集数` as the fast path: ~0.2s for indexed titles, returns `[{name, url}]` (absolute comment URL), empty `[]` when no hit; then fetch the comment URL (rewrite host to the local base) with `?format=xml` to get Bilibili `<d>` XML in ~0.6s.
+  - An 8s axios timeout on search + BUILTIN_MAX_RETRY=1 + multiple query modes stacked to 50s+ hangs; the fix (commit 5e7582b) is fongmi-first + a 10s overall Promise.race budget so the route always returns within budget.

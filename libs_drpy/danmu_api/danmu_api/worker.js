@@ -22,6 +22,38 @@ import {
 
 let globals;
 
+/**
+ * FongMi 弹幕接口统一入口。
+ * 支持 format=xml 时直接返回最优候选的弹幕 XML，兼容 jar 内按 XML 解析的弹幕搜索逻辑。
+ * @param {URL} url 请求 URL
+ * @param {Request} req 请求对象
+ * @returns {Promise<Response>} 弹幕响应
+ */
+async function handleFongmiDanmaku(url, req) {
+  const queryFormat = (url.searchParams.get("format") || "").toLowerCase();
+  const resp = await getFongmiDanmaku(url, req);
+  if (queryFormat !== "xml") return resp;
+
+  let commentUrl = "";
+  try {
+    const items = await resp.clone().json();
+    if (Array.isArray(items) && items.length > 0 && items[0] && items[0].url) {
+      commentUrl = items[0].url;
+    }
+  } catch (e) {
+    log("warn", `[system] [fongmi] format=xml 解析候选失败: ${e.message}`);
+  }
+
+  if (commentUrl) {
+    log("info", `[system] [fongmi] format=xml matched: ${commentUrl}`);
+    return getCommentByUrl(commentUrl, "xml", false, false);
+  }
+  return new Response('<?xml version="1.0" encoding="UTF-8"?>\n<i></i>', {
+    status: 200,
+    headers: { "Content-Type": "application/xml; charset=utf-8", "Access-Control-Allow-Origin": "*" }
+  });
+}
+
 async function handleRequest(req, env, deployPlatform, clientIp, ctx) {
   // 加载全局变量和环境变量配置
   globals = Globals.init(env);
@@ -320,12 +352,12 @@ async function handleRequest(req, env, deployPlatform, clientIp, ctx) {
 
   // GET|POST /api/v2/fongmi/danmaku
   if (path === "/api/v2/fongmi/danmaku" && (method === "GET" || method === "POST")) {
-    return getFongmiDanmaku(url, req);
+    return handleFongmiDanmaku(url, req);
   }
 
   // GET|POST /danmaku
   if (path === "/danmaku" && (method === "GET" || method === "POST")) {
-    return getFongmiDanmaku(url, req);
+    return handleFongmiDanmaku(url, req);
   }
 
   // GET /api/v2/match

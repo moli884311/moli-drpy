@@ -26,6 +26,8 @@ const cleanAxios = axios.create({ httpAgent, httpsAgent });
 // ── 弹幕 API 配置 ──
 const BUILTIN_API = "http://127.0.0.1:9321/";
 const BACKUP_API = "https://danmuapi-1-nu.vercel.app/";
+const BACKUP_API_1314 = "https://pizazz.us.ci/1314/";
+const BACKUP_API_LOGVAR = "https://danmu.iyo.us.ci/theft-dastardly-prognosis-hula-agenda2-dropkick/";
 const BUILTIN_TIMEOUT = 15000;
 const BACKUP_TIMEOUT = 10000;
 const BUILTIN_SEARCH_TIMEOUT = 8000;
@@ -700,6 +702,26 @@ export default async function(fastify, opts) {
                     danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode);
                 } catch (e) {
                     console.warn(`[danmu] 备用接口异常: ${e.message}`);
+                }
+            }
+
+            // 副接口1: pizazz 1314 弹幕源
+            if (!danmakuResult.xml) {
+                try {
+                    console.log(`[danmu] 尝试副接口1 (pizazz/1314)...`);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API_1314, realName, episode);
+                } catch (e) {
+                    console.warn(`[danmu] 副接口1异常: ${e.message}`);
+                }
+            }
+
+            // 副接口2: danmu.iyo LogVar 弹幕源
+            if (!danmakuResult.xml) {
+                try {
+                    console.log(`[danmu] 尝试副接口2 (danmu.iyo LogVar)...`);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API_LOGVAR, realName, episode);
+                } catch (e) {
+                    console.warn(`[danmu] 副接口2异常: ${e.message}`);
                 }
             }
 
