@@ -9,7 +9,6 @@ import http from 'http';
 import https from 'https';
 import { URL } from 'url';
 import { LRUCache } from 'lru-cache';
-import { ENV } from '../utils/env.js';
 
 console.log('[drplayer] 模块加载，弹幕功能已启用（本地 danmu-api）');
 
@@ -37,7 +36,6 @@ const TOTAL_SEARCH_BUDGET = 10000;
 const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
 const danmuResultCache = new LRUCache({ max: 1000, ttl: DANMU_CACHE_TTL });
-const danmuApiKey = ENV.get('api_pwd', process.env.API_PWD || 'dzyyds');
 
 // ── 工具函数 ──
 function getRealName(str) {
@@ -681,13 +679,6 @@ export default async function(fastify, opts) {
             console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
 
             if (!name) return sendEmpty();
-
-            if (req.query.pwd || req.query.token) {
-                if ((req.query.pwd || req.query.token || '') !== danmuApiKey) {
-                    console.warn(`[danmu] token 校验失败`);
-                    return reply.code(403).send('unauthorized');
-                }
-            }
 
             const realName = getRealName(name);
             console.log(`[danmu] realName=${realName}`);
