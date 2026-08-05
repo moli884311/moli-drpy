@@ -9,10 +9,8 @@ ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
 RUN apk add --no-cache git make python3 py3-pip build-base
 RUN git config --global http.version HTTP/1.1
 
-# 写入 npm/yarn 持久配置，保证 node-gyp 等子进程也走镜像源
-RUN npm config set registry https://registry.npmmirror.com \
-    && npm config set disturl https://npmmirror.com/mirrors/node \
-    && npm config set fetch-timeout 600000 \
+# 写入 npm/yarn 持久配置，保证 node-gyp 等子进程也走镜像源（disturl 需写 .npmrc，npm config set 会拒绝该 key）
+RUN printf 'registry=https://registry.npmmirror.com\ndisturl=https://npmmirror.com/mirrors/node\nfetch-timeout=600000\n' > /root/.npmrc \
     && yarn config set registry https://registry.npmmirror.com
 
 WORKDIR /app
