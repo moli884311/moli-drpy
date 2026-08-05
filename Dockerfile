@@ -1,8 +1,19 @@
 # 构建器阶段
 FROM node:22-alpine AS builder
 
+# 使用国内镜像源：加速依赖下载、解决 node-pty 编译时 node headers 下载超时、puppeteer Chromium 下载
+ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
+    NPM_CONFIG_DISTURL=https://npmmirror.com/mirrors/node \
+    PUPPETEER_DOWNLOAD_BASE_URL=https://cdn.npmmirror.com/binaries/chrome-for-testing
+
 RUN apk add --no-cache git make python3 py3-pip build-base
 RUN git config --global http.version HTTP/1.1
+
+# 写入 npm/yarn 持久配置，保证 node-gyp 等子进程也走镜像源
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm config set disturl https://npmmirror.com/mirrors/node \
+    && npm config set fetch-timeout 600000 \
+    && yarn config set registry https://registry.npmmirror.com
 
 WORKDIR /app
 
