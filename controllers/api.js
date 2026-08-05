@@ -312,13 +312,15 @@ export default (fastify, options, done) => {
                     }
                     if (!Array.isArray(resultObj) && resultObj && typeof resultObj === 'object' && !resultObj.danmaku && (resultObj.url || resultObj.parse !== undefined)) {
                         const cacheEntry = danmuCache.get(query.play);
+                        const apiPwd = ENV.get('api_pwd', process.env.API_PWD || 'dzyyds');
                         let danmuUrl = `${requestHost}/danmu`;
+                        const params = new URLSearchParams();
                         if (cacheEntry) {
-                            const params = new URLSearchParams();
                             params.set('name', cacheEntry.vodName);
                             if (cacheEntry.epText) params.set('episode', cacheEntry.epText);
-                            danmuUrl += '?' + params.toString();
                         }
+                        if (apiPwd) params.set('pwd', apiPwd);
+                        if (params.toString()) danmuUrl += '?' + params.toString();
                         resultObj.danmaku = danmuUrl;
                     }
                     return reply.send(isString ? JSON.stringify(resultObj) : resultObj);
