@@ -30,11 +30,13 @@ const BACKUP_API_1314 = "https://pizazz.us.ci/1314/";
 const BACKUP_API_LOGVAR = "https://danmu.iyo.us.ci/theft-dastardly-prognosis-hula-agenda2-dropkick/";
 const BUILTIN_TIMEOUT = 15000;
 const BACKUP_TIMEOUT = 10000;
-const BUILTIN_SEARCH_TIMEOUT = 8000;
+const BUILTIN_SEARCH_TIMEOUT = 11000;
 const BUILTIN_MAX_RETRY = 0;
-const FONGMI_SEARCH_TIMEOUT = 8000;
+const FONGMI_SEARCH_TIMEOUT = 15000;
 const FONGMI_COMMENT_TIMEOUT = 10000;
-const TOTAL_SEARCH_BUDGET = 10000;
+const TOTAL_SEARCH_BUDGET = 15000;
+const BACKUP_SEARCH_BUDGET = 10000;
+const PIZAZZ_SEARCH_BUDGET = 6000;
 const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
 const danmuResultCache = new LRUCache({ max: 1000, ttl: DANMU_CACHE_TTL });
@@ -497,9 +499,8 @@ async function searchBuiltinAnime(baseUrl, name, episode) {
 }
 
 async function searchBuiltinEpisodes(baseUrl, name, episode, queryMode = 0) {
-    const episodeQuery = getEpisodeQuery(episode, queryMode);
-    let searchUrl = `${baseUrl}/api/v2/search/episodes?anime=${encodeURIComponent(name)}`;
-    if (episodeQuery) searchUrl += `&episode=${encodeURIComponent(episodeQuery)}`;
+    // 不带 episode 参数请求，避免服务端按 episodeNumber 过滤导致失配返回空，改由本地 findEpisode 匹配
+    const searchUrl = `${baseUrl}/api/v2/search/episodes?anime=${encodeURIComponent(name)}`;
 
     let body = await httpGet(searchUrl, {}, BUILTIN_SEARCH_TIMEOUT, 1);
     if (!body) {
@@ -591,7 +592,7 @@ async function searchDanmuFromFongmi(baseUrl, name, episode) {
     return result;
 }
 
-async function searchDanmuFromApi(baseUrl, name, episode) {
+async function searchDanmuFromApi(baseUrl, name, episode, budgetMs = TOTAL_SEARCH_BUDGET) {
     const base = normalizeBaseUrl(baseUrl);
     const epNum = episode || 1;
     const cacheKey = getCacheKey(base, name, epNum);
@@ -621,8 +622,8 @@ async function searchDanmuFromApi(baseUrl, name, episode) {
                 console.log(`[danmu] no result: ${safeLog(name)}, ep: ${epNum}`);
                 return empty;
             })(),
-            delay(TOTAL_SEARCH_BUDGET).then(() => {
-                console.log(`[danmu] 搜索超时(${TOTAL_SEARCH_BUDGET}ms), 返回空: ${safeLog(name)}, ep: ${epNum}`);
+            delay(budgetMs).then(() => {
+                console.log(`[danmu] 搜索超时(${budgetMs}ms), 返回空: ${safeLog(name)}, ep: ${epNum}`);
                 return empty;
             })
         ]);
@@ -699,27 +700,27 @@ export default async function(fastify, opts) {
             if (!danmakuResult.xml) {
                 try {
                     console.log(`[danmu] 尝试备用接口...`);
-                    danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode, BACKUP_SEARCH_BUDGET);
                 } catch (e) {
                     console.warn(`[danmu] 备用接口异常: ${e.message}`);
                 }
             }
 
-            // 副接口1: pizazz 1314 弹幕源
+            // 副接口1: danmu.iyo LogVar 弹幕源（实测 ~9.5s 能返回结果，优先）
             if (!danmakuResult.xml) {
                 try {
-                    console.log(`[danmu] 尝试副接口1 (pizazz/1314)...`);
-                    danmakuResult = await searchDanmuFromApi(BACKUP_API_1314, realName, episode);
+                    console.log(`[danmu] 尝试副接口1 (danmu.iyo LogVar)...`);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API_LOGVAR, realName, episode, BACKUP_SEARCH_BUDGET);
                 } catch (e) {
                     console.warn(`[danmu] 副接口1异常: ${e.message}`);
                 }
             }
 
-            // 副接口2: danmu.iyo LogVar 弹幕源
+            // 副接口2: pizazz 1314 弹幕源（实测首次 20s+ 且二次请求易挂起，短预算仅作最后兜底）
             if (!danmakuResult.xml) {
                 try {
-                    console.log(`[danmu] 尝试副接口2 (danmu.iyo LogVar)...`);
-                    danmakuResult = await searchDanmuFromApi(BACKUP_API_LOGVAR, realName, episode);
+                    console.log(`[danmu] 尝试副接口2 (pizazz/1314)...`);
+                    danmakuResult = await searchDanmuFromApi(BACKUP_API_1314, realName, episode, PIZAZZ_SEARCH_BUDGET);
                 } catch (e) {
                     console.warn(`[danmu] 副接口2异常: ${e.message}`);
                 }
