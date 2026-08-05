@@ -6,21 +6,23 @@ RUN git config --global http.version HTTP/1.1
 
 WORKDIR /app
 
-# 克隆 drpy 源码
-RUN git clone https://github.com/moli884311/moli-drpy.git .
-RUN sed -i 's|const shell = os.platform() === '"'"'win32'"'"' ? '"'"'powershell.exe'"'"' : '"'"'bash'"'"'|const shell = os.platform() === '"'"'win32'"'"' ? '"'"'powershell.exe'"'"' : '"'"'sh'"'"'|' controllers/admin/terminalController.js
-RUN rm -rf drpy-node-admin drpy-node-bundle drpy-node-mcp drpy2-quickjs
-
-# 安装 drpy 依赖
+# 主项目依赖前置：package.json 未变化时该层缓存命中，增量部署大幅提速
+COPY package.json package-lock.json ./
 RUN yarn && yarn add puppeteer
 
-# --- 新增：复制 danmu-api 源码（仓库路径 libs_drpy/danmu_api） ---
+# 复制源码（deploy.sh 已 clone 到构建上下文，.dockerignore 排除 .git/node_modules）
+COPY . .
+
+# 移除不需要的子项目
+RUN rm -rf drpy-node-admin drpy-node-bundle drpy-node-mcp drpy2-quickjs
+RUN sed -i 's|const shell = os.platform() === '"'"'win32'"'"' ? '"'"'powershell.exe'"'"' : '"'"'bash'"'"'|const shell = os.platform() === '"'"'win32'"'"' ? '"'"'powershell.exe'"'"' : '"'"'sh'"'"'|' controllers/admin/terminalController.js
+
+# danmu-api 依赖前置 + 源码
+COPY libs_drpy/danmu_api/package.json /app/libs_drpy/danmu_api/package.json
+RUN cd /app/libs_drpy/danmu_api && npm install --production
 COPY libs_drpy/danmu_api /app/libs_drpy/danmu_api
 
-# --- 新增：进入正确目录安装 danmu-api 依赖（package.json 在 libs_drpy/danmu_api/ 下） ---
-RUN cd /app/libs_drpy/danmu_api && npm install --production
-
-# --- 新增：复制修改后的弹幕控制器（仓库已有 controllers/danmu.js，无需再取 apps/drplayer） ---
+# 覆盖弹幕控制器（仓库已有最新 controllers/danmu.js）
 COPY controllers/danmu.js /app/controllers/danmu.js
 
 # 准备临时目录用于运行阶段
@@ -50,7 +52,7 @@ RUN python3 -m venv /app/.venv && \
     . /app/.venv/bin/activate && \
     pip3 install -r /app/spider/py/base/requirements.txt
 
-# --- 新增：复制启动脚本 ---
+# 复制启动脚本
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
