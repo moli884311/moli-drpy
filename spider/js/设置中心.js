@@ -103,6 +103,7 @@ let quick_data2 = {
     'UC': 'uc',
     '阿里': 'ali',
     '天翼': 'cloud',
+    '123': 'pan123',
     '哔哩': 'bili',
     '系统配置': 'system',
     '测试': 'test',
@@ -261,8 +262,8 @@ var rule = {
     aliScanCheck: null,
     biliScanCheck: null,
     host: 'http://empty',
-    class_name: '推送&夸克&UC&阿里&百度&哔哩&天翼&迅雷&系统配置&测试&接口挂载&视频解析',
-    class_url: 'push&quark&uc&ali&baidu&bili&cloud&xun&system&test&apiLink&videoParse',
+    class_name: '推送&夸克&UC&阿里&百度&哔哩&天翼&迅雷&123&系统配置&测试&接口挂载&视频解析',
+    class_url: 'push&quark&uc&ali&baidu&bili&cloud&xun&pan123&system&test&apiLink&videoParse',
     url: '/fyclass',
 
     预处理: async function (env) {
@@ -393,10 +394,17 @@ var rule = {
             case 'cloud':
                 d.push(genMultiInput('cloud_account', '设置天翼 账号', null, images.cloud));
                 d.push(genMultiInput('cloud_password', '设置天翼 密码', null, images.cloud));
-                // d.push(genMultiInput('cloud_cookie', '设置天翼 cookie', null, images.cloud));
+                d.push(genMultiInput('cloud_cookie', '设置天翼 cookie', null, images.cloud));
                 d.push(getInput('get_cloud_account', '查看天翼 账号', images.cloud));
                 d.push(getInput('get_cloud_password', '查看天翼 密码', images.cloud));
                 d.push(getInput('get_cloud_cookie', '查看天翼 cookie', images.cloud));
+                d.push({
+                    vod_id: '天翼扫码',
+                    vod_name: '天翼扫码',
+                    vod_pic: images.cloud,
+                    vod_remarks: '天翼',
+                    vod_tag: 'action'
+                });
                 break;
             case 'baidu':
                 d.push(genMultiInput('baidu_cookie', '设置百度 cookie', null, images.baidu));
@@ -430,6 +438,12 @@ var rule = {
                     vod_remarks: '迅雷',
                     vod_tag: 'action'
                 });
+                break;
+            case 'pan123':
+                d.push(genMultiInput('pan_passport', '设置123 账号', null, images.settings));
+                d.push(genMultiInput('pan_password', '设置123 密码', null, images.settings));
+                d.push(getInput('get_pan_passport', '查看123 账号', images.settings));
+                d.push(getInput('get_pan_password', '查看123 密码', images.settings));
                 break;
             case 'system':
                 d.push(genMultiInput('hide_adult', '设置青少年模式', '把值设置为1将会在全部接口隐藏18+源，其他值不过滤，跟随订阅', images.settings));
@@ -1340,6 +1354,8 @@ var rule = {
             'bili_cookie',
             'baidu_cookie',
             'xun_username',
+            'pan_passport',
+            'pan_password',
             'hide_adult',
             'thread',
             'play_local_proxy_type',
@@ -1379,6 +1395,8 @@ var rule = {
             'get_bili_cookie',
             'get_baidu_cookie',
             'get_xun_username',
+            'get_pan_passport',
+            'get_pan_password',
             'get_hide_adult',
             'get_thread',
             'play_local_proxy_type',

@@ -27,6 +27,8 @@
         <li><a class="btn-scan" data-platform="yun">移动</a></li>
         <li><a class="btn-scan" data-platform="baidu">百度</a></li>
         <li><a class="btn-scan" data-platform="pikpak">PikPak</a></li>
+        <li><a class="btn-scan" data-platform="cloud">天翼</a></li>
+        <li><a class="btn-scan" data-platform="pan123">123盘</a></li>
     </ul>
 
     <!-- QR Code -->
@@ -100,6 +102,8 @@
             let save_key = ''
             if (/ali|pikpak/.test(active_key)) {
                 save_key = active_key + '_token'
+            } else if (/pan123/.test(active_key)) {
+                save_key = 'pan_passport'
             } else {
                 save_key = active_key + '_cookie';
             }

@@ -16,6 +16,8 @@ class QRCodeHandler {
     static PLATFORM_YUN = "yun";           //移动
     static PLATFORM_BAIDU = "baidu";    //百度
     static PLATFORM_PIKPAK = "pikpak";  //pikpak
+    static PLATFORM_CLOUD = "cloud";     //天翼
+    static PLATFORM_PAN123 = "pan123";   //123盘
 
     // 通用请求头
     static HEADERS = {
@@ -35,6 +37,8 @@ class QRCodeHandler {
             [QRCodeHandler.PLATFORM_YUN]: null,
             [QRCodeHandler.PLATFORM_BAIDU]: null,
             [QRCodeHandler.PLATFORM_PIKPAK]: null,
+            [QRCodeHandler.PLATFORM_CLOUD]: null,
+            [QRCodeHandler.PLATFORM_PAN123]: null,
         };
         this.Addition = {
             DeviceID: '07b48aaba8a739356ab8107b5e230ad4', RefreshToken: '', AccessToken: ''
@@ -145,6 +149,10 @@ class QRCodeHandler {
                 return await this._startBaiduScan();
             case QRCodeHandler.PLATFORM_PIKPAK:
                 return await this._startPikPakScan();
+            case QRCodeHandler.PLATFORM_CLOUD:
+                return await this._startCloudScan();
+            case QRCodeHandler.PLATFORM_PAN123:
+                return await this._startPan123Scan();
             default:
                 throw new Error("Unsupported platform");
         }
@@ -170,6 +178,10 @@ class QRCodeHandler {
                 return await this._checkBaiduStatus();
             case QRCodeHandler.PLATFORM_PIKPAK:
                 return await this._checkPikPakStatus();
+            case QRCodeHandler.PLATFORM_CLOUD:
+                return await this._checkCloudStatus();
+            case QRCodeHandler.PLATFORM_PAN123:
+                return await this._checkPan123Status();
             default:
                 throw new Error("Unsupported platform");
         }
@@ -743,6 +755,82 @@ class QRCodeHandler {
             this.platformStates[QRCodeHandler.PLATFORM_PIKPAK] = null;
             throw new Error(e.message);
         }
+    }
+
+    // 天翼云盘平台相关方法
+    async _startCloudScan() {
+        try {
+            const res = await axios({
+                url: "/http", method: "GET", data: {
+                    url: "https://cloud.189.cn/api/portal/login/qrcode.action",
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+                        'Accept': 'application/json',
+                    }
+                }
+            });
+            const data = res.data.data || res.data;
+            if (data.uuid) {
+                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = {uuid: data.uuid};
+                return {
+                    status: QRCodeHandler.STATUS_PENDING,
+                    qr_image: "https://cloud.189.cn/api/portal/login/qrcode.action?uuid=" + data.uuid,
+                };
+            }
+            throw new Error("获取天翼二维码失败");
+        } catch (e) {
+            this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
+            throw new Error(e.message);
+        }
+    }
+
+    async _checkCloudStatus() {
+        const state = this.platformStates[QRCodeHandler.PLATFORM_CLOUD];
+        if (!state) return {status: QRCodeHandler.STATUS_EXPIRED};
+        try {
+            const res = await axios({
+                url: "/http", method: "GET", data: {
+                    url: `https://cloud.189.cn/api/portal/login/qrcodeCheck.action?uuid=${state.uuid}`,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+                        'Accept': 'application/json',
+                    }
+                }
+            });
+            const data = res.data.data || res.data;
+            if (data.result === 0 || data.recode?.includes('成功')) {
+                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
+                const cookie = this._formatCookies(res.headers['set-cookie']);
+                // 提取天翼cookie并保存到cloud_cookie
+                return {status: QRCodeHandler.STATUS_CONFIRMED, token: cookie};
+            }
+        } catch (e) {
+            this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
+            throw new Error(e.message);
+        }
+    }
+
+    // 123网盘平台相关方法（账号密码登录）
+    async _startPan123Scan() {
+        return {
+            status: QRCodeHandler.STATUS_PENDING,
+            qr_image: null,
+            message: "123网盘暂不支持扫码, 请通过设置中心手动输入账号(手机号)和密码"
+        };
+    }
+
+    async _checkPan123Status() {
+        this.platformStates[QRCodeHandler.PLATFORM_PAN123] = null;
+        return {status: QRCodeHandler.STATUS_EXPIRED};
+    }
+
+    _formatCookies(setCookieHeader) {
+        if (!setCookieHeader) return '';
+        const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+        return cookies.map(c => {
+            const match = c.match(/^([^;]+)/);
+            return match ? match[1] : '';
+        }).join('; ');
     }
 
     generateDeviceID(timestamp) {

@@ -351,8 +351,13 @@ class QuarkHandler {
         if (resp.headers?.['set-cookie']) {
             const puus = resp.headers['set-cookie'].join(';;;').match(/__puus=([^;]+)/);
             if (puus) {
-                if (cookie.match(/__puus=([^;]+)/)[1] !== puus[1]) {
-                    cookie = cookie.replace(/__puus=[^;]+/, `__puus=${puus[1]}`);
+                const currentPuus = cookie.match(/__puus=([^;]+)/);
+                if (!currentPuus || currentPuus[1] !== puus[1]) {
+                    if (currentPuus) {
+                        cookie = cookie.replace(/__puus=[^;]+/, `__puus=${puus[1]}`);
+                    } else {
+                        cookie = cookie + `; __puus=${puus[1]}`;
+                    }
                     console.log('[quark] api:更新cookie:', cookie);
                     ENV.set('quark_cookie', cookie);
                 }
@@ -758,7 +763,6 @@ class QuarkHandler {
 
     async getDownload(shareId, stoken, fileId, fileToken, clean) {
         await this.initQuark()
-        // this.saveFileIdCaches[fileId] = ''
         if (!this.saveFileIdCaches[fileId]) {
 
             const saveFileId = await this.save(shareId, stoken, fileId, fileToken, clean);
@@ -768,15 +772,16 @@ class QuarkHandler {
             this.saveFileIdCaches[fileId] = saveFileId;
 
         }
-        //分享不限速写法
+        const targetFid = this.saveFileIdCaches[fileId];
+        return await this._getDownloadByFid(targetFid);
+    }
+
+    async _getDownloadByFid(fid) {
         let fr = 'pr=ucpro&fr=pc&sys=win32'
         let video = []
         let conversation_id = "300000103982583563"
         let header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 QuarkPC/4.5.5.535 quark-cloud-drive/2.5.40 Channel/pckk_other_ch',
-            // 'x-u-kps-wg': this.kps,
-            // 'x-u-sign-wg': this.sign,
-            // 'x-u-vcode': this.vcode,
             'Accept': 'application/json, text/plain, */*',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
             'Content-Type': 'application/json',
@@ -790,7 +795,7 @@ class QuarkHandler {
                     "conversation_type": 3,
                     "file_list": [
                         {
-                            "fid": this.saveFileIdCaches[fileId],
+                            "fid": fid,
                             "client_extra": {
                                 "local_msg_id": "b9b42b73-132e-4c71-ad88-e78cb8cc15a5"
                             }
@@ -817,7 +822,7 @@ class QuarkHandler {
                 let token = acquire_dl_token.data.token
                 let data = JSON.stringify({
                     "fids": [
-                        this.saveFileIdCaches[fileId],
+                        fid,
                     ],
                     "cn_sw": "open",
                     "ab_tag": "_",
@@ -849,7 +854,7 @@ class QuarkHandler {
                         "conversation_type": 3,
                         "file_list": [
                             {
-                                "fid": this.saveFileIdCaches[fileId],
+                                "fid": fid,
                                 "client_extra": {
                                     "local_msg_id": "b9b42b73-132e-4c71-ad88-e78cb8cc15a5"
                                 }
@@ -865,7 +870,7 @@ class QuarkHandler {
             if (shareData.data.send_msg_list.length > 0) {
                 let data = JSON.stringify({
                     "fids": [
-                        this.saveFileIdCaches[fileId]
+                        fid
                     ],
                     "speedup_session": ""
                 })
@@ -1000,6 +1005,12 @@ class QuarkHandler {
 
         return null;
 
+    }
+
+    async downloadDirect(fid) {
+        await this.initQuark();
+        if (!fid) return null;
+        return await this._getDownloadByFid(fid);
     }
 
     async getToken() {

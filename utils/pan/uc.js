@@ -702,6 +702,13 @@ class UCHandler {
         return null;
     }
 
+    async downloadDirect(fid) {
+        await this.initUC();
+        if (!fid) return null;
+        this.saveFileIdCaches[fid] = fid;
+        return await this.getDownload('', '', fid, '', false);
+    }
+
     async getLazyResult(downCache, mediaProxyUrl) {
         const urls = [];
         if (Array.isArray(downCache)) {

@@ -20,7 +20,7 @@ function showToast(message, type = 'success') {
 // 初始化页面
 async function initializePage() {
     // 加载cookie
-    const platforms = ['ali', 'quark', 'quark_token', 'uc', 'uc_token', 'bili', 'yun', 'baidu', 'pikpak'];
+    const platforms = ['ali', 'quark', 'quark_token', 'uc', 'uc_token', 'bili', 'yun', 'baidu', 'pikpak', 'cloud', 'pan123'];
 
     // 绑定按钮事件
     platforms.forEach(platform => {
