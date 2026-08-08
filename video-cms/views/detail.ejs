@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/style.css">
+<title><%= video.title %> - 视频站</title>
+</head>
+<body>
+<header class="stui-header__menu">
+  <nav class="nav-menu-items">
+    <ul>
+      <li><a href="/">首页</a></li>
+      <% locals.tagLinks?.forEach(t => { %>
+        <li class="tag-link"><a href="<%= t.url %>"><%= t.name %></a></li>
+      <% }); %>
+    </ul>
+  </nav>
+</header>
+<main class="container detail-page">
+  <div class="video-info-box">
+    <div class="video-info-left">
+      <% if (video.pic) { %>
+        <img class="lazyload" data-original="<%= video.pic %>" data-src="<%= video.pic %>" src="<%= video.pic %>" alt="<%= video.title %>">
+      <% } %>
+    </div>
+    <div class="video-info-right">
+      <h1 class="title"><%= video.title %></h1>
+      <div class="video-info-items">
+        <span>类型: <a class="tag-link"><%= video.category_name || '' %></a></span>
+        <% if (video.area) { %><span>地区: <a class="tag-link"><%= video.area %></a></span><% } %>
+        <% if (video.year) { %><span>年份: <a class="tag-link"><%= video.year %></a></span><% } %>
+        <% if (video.remarks) { %><span><%= video.remarks %></span><% } %>
+      </div>
+      <% if (video.content) { %>
+        <div class="sqjj_a--span desc">
+          <h3>剧情简介</h3>
+          <p><%= video.content %></p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (links.length > 0) { %>
+    <div class="playlist">
+      <h3>播放来源</h3>
+      <% links.forEach(l => { %>
+        <div class="module-row-title">
+          <p><%= l.url %></p>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>暂无播放链接</p>
+  <% } %>
+</main>
+</body>
+</html>

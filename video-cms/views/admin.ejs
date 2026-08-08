@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f5f5f5;padding:20px}
+h1{margin-bottom:20px}
+table{width:100%;border-collapse:collapse;background:#fff;margin-bottom:20px}
+th,td{padding:10px;border:1px solid #ddd;text-align:left}
+th{background:#333;color:#fff}
+.form-box{background:#fff;padding:20px;border-radius:8px;margin-bottom:20px}
+.form-box input,.form-box textarea,.form-box select{display:block;width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;border-radius:4px}
+.form-box label{font-weight:bold;margin-bottom:4px;display:block}
+.form-box textarea{height:100px}
+.btn{padding:8px 16px;border:none;border-radius:4px;cursor:pointer;margin-right:8px}
+.btn-primary{background:#4a90d9;color:#fff}
+.btn-danger{background:#d94a4a;color:#fff}
+.btn-success{background:#4ad97a;color:#fff}
+.alert{padding:10px;border-radius:4px;margin-bottom:10px;display:none}
+.alert-success{background:#d4edda;color:#155724}
+.alert-error{background:#f8d7da;color:#721c24}
+.link-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+.link-row input{flex:1;margin-bottom:0}
+.pwd-box{margin-bottom:20px}
+.tabs{display:flex;gap:10px;margin-bottom:20px}
+.tab{padding:8px 16px;background:#ddd;cursor:pointer;border-radius:4px 4px 0 0}
+.tab.active{background:#4a90d9;color:#fff}
+</style>
+</head>
+<body>
+<h1>视频CMS 管理后台</h1>
+<div class="pwd-box">
+  <label>管理密码</label>
+  <input type="password" id="pwd" value="<%= ADMIN_PWD %>" onchange="ADMIN_PWD=this.value">
+</div>
+<div id="msg" class="alert"></div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('list')">视频列表</div>
+  <div class="tab" onclick="showTab('add')">添加视频</div>
+</div>
+
+<div id="tab-list">
+  <table>
+    <thead>
+      <tr><th>标题</th><th>分类</th><th>年份</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+      <% videos.forEach(v => { %>
+        <tr>
+          <td><%= v.title %></td>
+          <td><%= v.category_name %></td>
+          <td><%= v.year || '-' %></td>
+          <td>
+            <button class="btn btn-primary" onclick="editVideo('<%= v.id %>')">编辑</button>
+            <button class="btn btn-danger" onclick="delVideo('<%= v.id %>')">删除</button>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<div id="tab-add" style="display:none">
+  <form id="videoForm" class="form-box" onsubmit="saveVideo(event)">
+    <input type="hidden" name="id" id="vid">
+    <label>标题 *</label><input type="text" name="title" id="title" required>
+    <label>分类</label>
+    <select name="category_id" id="category_id">
+      <% categories.forEach(c => { %>
+        <option value="<%= c.id %>"><%= c.name %></option>
+      <% }); %>
+    </select>
+    <label>海报URL</label><input type="text" name="pic" id="pic">
+    <label>年份</label><input type="text" name="year" id="year">
+    <label>地区</label><input type="text" name="area" id="area">
+    <label>备注</label><input type="text" name="remarks" id="remarks">
+    <label>简介</label><textarea name="content" id="content"></textarea>
+    <label>盘链（夸克/UC/百度/天翼/123/移动/阿里）</label>
+    <div id="linksContainer">
+      <div class="link-row">
+        <input type="text" placeholder="标签（如:夸克）" class="link-label">
+        <input type="text" placeholder="盘链接" class="link-url">
+      </div>
+    </div>
+    <button type="button" class="btn" onclick="addLink()">+ 添加链接</button>
+    <br><br>
+    <button type="submit" class="btn btn-primary" id="submitBtn">保存</button>
+    <button type="button" class="btn" onclick="resetForm()">重置</button>
+  </form>
+</div>
+
+<script>
+let ADMIN_PWD = '<%= ADMIN_PWD %>';
+
+function showTab(name) {
+  document.querySelectorAll('#tab-list,#tab-add').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelector('.tabs .tab:nth-child(' + (name === 'list' ? '1' : '2') + ')').classList.add('active');
+}
+
+function addLink() {
+  const div = document.createElement('div');
+  div.className = 'link-row';
+  div.innerHTML = '<input type="text" placeholder="标签" class="link-label"><input type="text" placeholder="盘链接" class="link-url"><button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">X</button>';
+  document.getElementById('linksContainer').appendChild(div);
+}
+
+function msg(text, type) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'alert alert-' + (type || 'success');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function resetForm() {
+  document.getElementById('videoForm').reset();
+  document.getElementById('vid').value = '';
+  document.getElementById('linksContainer').innerHTML = '<div class="link-row"><input type="text" placeholder="标签" class="link-label"><input type="text" placeholder="盘链接" class="link-url"></div>';
+  document.getElementById('submitBtn').textContent = '保存';
+}
+
+async function saveVideo(e) {
+  e.preventDefault();
+  const form = document.getElementById('videoForm');
+  const links = [];
+  document.querySelectorAll('.link-row').forEach(row => {
+    const label = row.querySelector('.link-label').value;
+    const url = row.querySelector('.link-url').value;
+    if (url) links.push({ label: label || '原画', url });
+  });
+  const data = {
+    id: form.id.value || undefined,
+    title: form.title.value,
+    category_id: form.category_id.value,
+    pic: form.pic.value,
+    year: form.year.value,
+    area: form.area.value,
+    remarks: form.remarks.value,
+    content: form.content.value,
+    links,
+    pwd: ADMIN_PWD
+  };
+  const resp = await fetch('/api/video?pwd=' + ADMIN_PWD, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (resp.ok) {
+    msg('保存成功');
+    resetForm();
+    location.reload();
+  } else {
+    msg('保存失败', 'error');
+  }
+}
+
+async function editVideo(id) {
+  const resp = await fetch('/api/video/' + id + '?pwd=' + ADMIN_PWD);
+  if (!resp.ok) return msg('加载失败', 'error');
+  const v = await resp.json();
+  document.getElementById('vid').value = v.id;
+  document.getElementById('title').value = v.title;
+  document.getElementById('category_id').value = v.category_id;
+  document.getElementById('pic').value = v.pic || '';
+  document.getElementById('year').value = v.year || '';
+  document.getElementById('area').value = v.area || '';
+  document.getElementById('remarks').value = v.remarks || '';
+  document.getElementById('content').value = v.content || '';
+  document.getElementById('submitBtn').textContent = '更新';
+  const container = document.getElementById('linksContainer');
+  container.innerHTML = '';
+  (v.links || []).forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'link-row';
+    div.innerHTML = '<input type="text" placeholder="标签" class="link-label" value="' + (l.label || '') + '"><input type="text" placeholder="盘链接" class="link-url" value="' + (l.url || '') + '"><button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">X</button>';
+    container.appendChild(div);
+  });
+  if ((v.links || []).length === 0) addLink();
+  showTab('add');
+}
+
+async function delVideo(id) {
+  if (!confirm('确认删除？')) return;
+  const resp = await fetch('/api/video/' + id + '?pwd=' + ADMIN_PWD, { method: 'DELETE' });
+  if (resp.ok) { msg('删除成功'); location.reload(); }
+  else msg('删除失败', 'error');
+}
+</script>
+</body>
+</html>

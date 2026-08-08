@@ -1,0 +1,16 @@
+{
+  "name": "video-cms",
+  "version": "1.0.0",
+  "description": "轻量级视频CMS，输出兼容DRPY蜘蛛的HTML",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "uuid": "^10.0.0"
+  }
+}

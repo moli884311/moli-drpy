@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/style.css">
+<title>视频站</title>
+</head>
+<body>
+<header class="stui-header__menu">
+  <div class="nav-menu-items">
+    <ul>
+      <li><a href="/">首页</a></li>
+      <% categories.forEach(c => { %>
+        <li><a href="/index.php/vod/show/id/<%= c.id %>.html"><%= c.name %></a></li>
+      <% }); %>
+    </ul>
+  </div>
+  <form class="search-form" action="/index.php/vod/search/page/1/wd/" method="GET" onsubmit="this.action='/index.php/vod/search/page/1/wd/'+this.q.value+'.html'">
+    <input type="text" name="q" placeholder="搜索..." value="<%= locals.keyword || '' %>">
+    <button type="submit">搜索</button>
+  </form>
+</header>
+</body>
+</html>

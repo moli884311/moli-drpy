@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/style.css">
+<title><%= title %> - 视频站</title>
+</head>
+<body>
+<header class="stui-header__menu">
+  <nav class="nav-menu-items">
+    <ul>
+      <li><a href="/">首页</a></li>
+      <% categories.forEach(c => { %>
+        <li><a href="/index.php/vod/show/id/<%= c.id %>.html"><%= c.name %></a></li>
+      <% }); %>
+    </ul>
+  </nav>
+  <div class="search-box">
+    <form onsubmit="location.href='/index.php/vod/search/page/1/wd/'+encodeURIComponent(this.q.value)+'.html';return false">
+      <input type="text" name="q" placeholder="搜索影片..." value="<%= locals.keyword || '' %>">
+      <button type="submit">搜索</button>
+    </form>
+  </div>
+</header>
+<main class="container">
+
+<% if (locals.videos) { %>
+  <% if (locals.keyword) { %>
+    <h2>搜索 "<%= keyword %>" 结果 (<%= total %> 部)</h2>
+  <% } else { %>
+    <h2><%= categories.find(c => c.id === cid)?.name || '全部' %> <small>(<%= total %> 部)</small></h2>
+  <% } %>
+  <div class="stui-vodlist">
+    <ul class="module-items">
+      <% videos.forEach(v => { %>
+        <li class="module-item module-search-item">
+          <a href="/index.php/vod/detail/id/<%= v.id %>.html" title="<%= v.title %>">
+            <div class="module-item-cover">
+              <% if (v.pic) { %>
+                <img data-src="<%= v.pic %>" src="<%= v.pic %>" alt="<%= v.title %>">
+              <% } else { %>
+                <div class="no-pic"></div>
+              <% } %>
+              <span class="module-item-text"><%= v.remarks || v.category_name || '' %></span>
+            </div>
+            <div class="video-info">
+              <h3 title="<%= v.title %>"><%= v.title %></h3>
+            </div>
+          </a>
+        </li>
+      <% }); %>
+    </ul>
+  </div>
+  <div class="page-box">
+    <% if (page > 1) { %>
+      <a href="?page=<%= page - 1 %>">上一页</a>
+    <% } %>
+    <span><%= page %> / <%= Math.ceil(total / PAGE_SIZE) %></span>
+    <% if (hasMore) { %>
+      <a href="?page=<%= page + 1 %>">下一页</a>
+    <% } %>
+  </div>
+<% } %>
+
+</main>
+</body>
+</html>
