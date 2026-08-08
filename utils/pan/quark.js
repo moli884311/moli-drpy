@@ -486,7 +486,9 @@ class QuarkHandler {
     async getFilesByShareUrl(shareInfo) {
         const shareData = typeof shareInfo === 'string' ? this.getShareData(shareInfo) : shareInfo;
         if (!shareData) return [];
+        console.log('[quark] getFilesByShareUrl: getting token for', shareData.shareId);
         await this.getShareToken(shareData);
+        console.log('[quark] getFilesByShareUrl: token result', !!this.shareTokenCache[shareData.shareId]);
         if (!this.shareTokenCache[shareData.shareId]) return [];
 
         const videos = [];      // 视频文件列表
