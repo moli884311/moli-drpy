@@ -520,6 +520,7 @@ class QuarkHandler {
                     let text = /[#|'"\[\]&<>]/g
                     if (item.size < 1024 * 1024 * 5) continue;
                     item.stoken = this.shareTokenCache[shareData.shareId].stoken;
+                    item.share_fid_token = item.share_fid_token || '';
                     item.file_name = text.test(item.file_name) ? item.file_name.replace(text, '') : item.file_name
                     videos.push(item);
                 } else if (item.type === 'file' && this.subtitleExts.some((x) => item.file_name.endsWith(x))) {
@@ -618,12 +619,12 @@ class QuarkHandler {
                         return taskResult.data.save_as.save_as_top_fids[0];
                     }
                     retry++;
-                    if (retry > 5) break;
+                    if (retry > 5) return null;
                     await this.delay(1000);
                 }
             }
         }
-        return true;
+        return null;
     }
 
     /**
@@ -1053,6 +1054,17 @@ class QuarkHandler {
             const saveFileId = await this.save(shareId, stoken, fileId, fileToken, true);
             if (!saveFileId) return null;
             this.saveFileIdCaches[fileId] = saveFileId;
+        }
+        const playResult = await this.api(`file/v2/play?${this.pr}`, {
+            fid: this.saveFileIdCaches[fileId],
+            resolutions: 'normal,low,high,super,2k,4k',
+            supports: 'fmp4',
+        });
+        if (playResult.data && playResult.data.video_list) {
+            return playResult.data.video_list.map(it => ({
+                name: it.resolution === 'low' ? '流畅' : it.resolution === 'high' ? '高清' : it.resolution === 'super' ? '超清' : it.resolution || '原画',
+                url: it.video_info.url
+            }));
         }
         return await this._getDownloadByFid(this.saveFileIdCaches[fileId]);
     }

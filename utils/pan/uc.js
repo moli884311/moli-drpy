@@ -495,11 +495,11 @@ class UCHandler {
 
                 }
                 retry++;
-                if (retry > 5) break;
+                if (retry > 5) return null;
                 await this.delay(1000);
             }
         }
-        return true;
+        return null;
     }
 
     async getLiveTranscoding(shareId, stoken, fileId, fileToken) {
