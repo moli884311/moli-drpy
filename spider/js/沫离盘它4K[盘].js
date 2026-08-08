@@ -115,7 +115,7 @@ var rule = {
         let {input, mediaProxyUrl} = this;
         let ids = input.split('*'); let urls = [];
         if (flag.startsWith('夸克')) {
-            let down = await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true);
+            let down = (await Quark.getUrl(ids[0], ids[1], ids[2], ids[3])) || (await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true));
             down.forEach(t => {if(t.url) urls.push(t.name, t.url+'#isVideo=true##fastPlayMode##threads=20#');});
             return {parse:0, url:urls, header:{'Cookie':ENV.get('quark_cookie')}};
         } else if (flag.startsWith('百度')) {

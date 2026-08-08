@@ -696,7 +696,7 @@ class UCHandler {
                         console.log(`getDownload:自动刷新UC cookie失败:${e.message}`)
                     }
                 }
-                return down.data[0];
+                return [{name: '原画', download_url: low_url}];
             }
         }
         return null;
@@ -711,36 +711,27 @@ class UCHandler {
 
     async getLazyResult(downCache, mediaProxyUrl) {
         const urls = [];
-        if (Array.isArray(downCache)) {
-            downCache.forEach((it) => {
-                urls.push(it.name, it.url + "#isVideo=true##fastPlayMode##threads=10#");
-            });
-        }
-        return {parse: 0, url: urls}
-
-        /*
-        // 旧的加速写法
-        const downUrl = downCache.download_url;
-        const headers = {
+        const ucHeaders = {
             "Referer": "https://drive.uc.cn/",
             "cookie": this.cookie,
             "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch'
         };
-        urls.push("UC原画", downUrl);
-        urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(downUrl) + '&header=' + encodeURIComponent(JSON.stringify(headers)));
-        if (ENV.get('play_local_proxy_type', '1') === '2') {
-            urls.push("原代本", `http://127.0.0.1:7777/?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(downUrl) + '&header=' + encodeURIComponent(JSON.stringify(headers)));
-        } else {
-            urls.push("原代本", `http://127.0.0.1:5575/proxy?thread=${ENV.get('thread') || 6}&chunkSize=256&url=` + encodeURIComponent(downUrl));
+        if (Array.isArray(downCache)) {
+            downCache.forEach((it) => {
+                if (it.url) {
+                    urls.push(it.name, it.url + "#isVideo=true##fastPlayMode##threads=10#");
+                }
+                if (mediaProxyUrl && it.download_url) {
+                    urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(it.download_url || it.url) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+                }
+            });
+        } else if (downCache && downCache.download_url) {
+            urls.push("UC原画", downCache.download_url);
+            if (mediaProxyUrl) {
+                urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(downCache.download_url) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+            }
         }
-
-        return {
-            parse: 0,
-            url: urls,
-            header: headers,
-        }
-        */
-
+        return {parse: 0, url: urls, header: ucHeaders};
     }
 
     async testSupport(url, headers) {

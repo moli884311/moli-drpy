@@ -1010,6 +1010,35 @@ class QuarkHandler {
     async downloadDirect(fid) {
         await this.initQuark();
         if (!fid) return null;
+        try {
+            let token = await this.getToken();
+            if (token) {
+                let fr = 'pr=ucpro&fr=pc&sys=win32';
+                let data = JSON.stringify({
+                    "fids": [fid],
+                    "cn_sw": "open",
+                    "ab_tag": "_",
+                    "token": token
+                });
+                let header = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 QuarkPC/4.5.5.535',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Content-Type': 'application/json',
+                    'Cookie': this.cookie
+                };
+                let down = (await axios.post(`https://drive-pc.quark.cn/1/clouddrive/file/download?${fr}`, data, {
+                    headers: header
+                })).data;
+                if (down.data?.[0]?.download_url) {
+                    return [{
+                        name: '原画',
+                        url: down.data[0].download_url
+                    }];
+                }
+            }
+        } catch(e) {
+            console.log(`downloadDirect fast path failed: ${e.message}, falling back to batch_send`);
+        }
         return await this._getDownloadByFid(fid);
     }
 

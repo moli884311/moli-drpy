@@ -172,7 +172,7 @@ var rule = {
     let ids = input.split('*');
     let urls = [];
     if (flag.startsWith('夸克')) {
-        let down = await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true);
+        let down = (await Quark.getUrl(ids[0], ids[1], ids[2], ids[3])) || (await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true));
         down.forEach(t => {if(t.url!==undefined){urls.push(t.name, t.url+'#isVideo=true##fastPlayMode##threads=20#');urls.push('猫'+t.name, 'http://127.0.0.1:5575/proxy?thread='+(ENV.get('thread')||6)+'&chunkSize=1024&url='+encodeURIComponent(t.url));}});
         let tc = (await Quark.getLiveTranscoding(ids[0], ids[1], ids[2], ids[3])).filter(t=>t.accessable);
         tc.forEach(t=>urls.push(t.resolution==='low'?'流畅':t.resolution==='high'?'高清':t.resolution==='super'?'超清':t.resolution, t.video_info.url+'#isVideo=true##fastPlayMode##threads=20#'));

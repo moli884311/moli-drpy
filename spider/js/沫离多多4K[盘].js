@@ -258,7 +258,7 @@ var rule = {
         let ids = input.split('*');
         let urls = [];
         if (flag.startsWith('夸克')) {
-            let down = await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true);
+            let down = (await Quark.getUrl(ids[0], ids[1], ids[2], ids[3])) || (await Quark.getDownload(ids[0], ids[1], ids[2], ids[3], true));
             down.forEach(t => {if(t.url!==undefined){urls.push(t.name, t.url+'#isVideo=true##fastPlayMode##threads=20#');}});
             let transcoding = (await Quark.getLiveTranscoding(ids[0], ids[1], ids[2], ids[3])).filter(t => t.accessable);
             transcoding.forEach(t => urls.push(t.resolution === 'low' ? '流畅' : t.resolution === 'high' ? '高清' : t.resolution === 'super' ? '超清' : t.resolution, t.video_info.url+'#isVideo=true##fastPlayMode##threads=20#'));
