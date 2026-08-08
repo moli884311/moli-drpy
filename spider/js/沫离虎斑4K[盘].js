@@ -263,7 +263,7 @@ var rule = {
             let transcoding = (await Quark.getLiveTranscoding(ids[0], ids[1], ids[2], ids[3])).filter(t => t.accessable);
             transcoding.forEach(t => urls.push(t.resolution === 'low' ? '流畅' : t.resolution === 'high' ? '高清' : t.resolution === 'super' ? '超清' : t.resolution, t.video_info.url+'#isVideo=true##fastPlayMode##threads=20#'));
             return {parse: 0, url: urls, header: {'Cookie': ENV.get('quark_cookie')}};
-        } else if (flag.startsWith('UC')) {
+        } else if ((flag.startsWith('UC') || flag.startsWith('优汐'))) {
             let down = await UC.getDownload(ids[0], ids[1], ids[2], ids[3], true);
             return await UC.getLazyResult(down, mediaProxyUrl);
         } else if (flag.startsWith('移动')) {

@@ -340,7 +340,7 @@ var rule = {
             url: urls,
             header: headers
         };
-    } else if (flag.startsWith('UC')) {
+    } else if ((flag.startsWith('UC') || flag.startsWith('优汐'))) {
         console.log("UC网盘解析开始");
         if (!UCDownloadingCache[ids[1]]) {
             let down = await UC.getDownload(ids[0], ids[1], ids[2], ids[3], true);
