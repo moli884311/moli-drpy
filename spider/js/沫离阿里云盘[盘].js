@@ -58,4 +58,26 @@ var rule = {
             return setResult(d);
         } catch(e) {return setResult([]);}
     },
+    二级: async function (ids) {
+        let {input} = this;
+        let [file_id, share_id] = (input || ids || 'root|root').split('|');
+        return {
+            vod_name: '阿里文件',
+            vod_pic: '',
+            vod_play_from: '阿里',
+            vod_play_url: share_id + '*' + file_id
+        };
+    },
+    lazy: async function (flag, id, flags) {
+        let {input} = this;
+        let ids = input.split('*');
+        let down = await Ali.getDownload(ids[0], ids[1]);
+        let urls = [];
+        urls.push('原画', down.url + '#isVideo=true##ignoreMusic=true#');
+        urls.push('极速原画', down.url + '#fastPlayMode##threads=10#');
+        let tr = (await Ali.getLiveTranscoding(ids[0], ids[1])).sort((a, b) => b.template_width - a.template_width);
+        let tc = {UHD: '4K 超清', QHD: '2K 超清', FHD: '1080 全高清', HD: '720 高清', SD: '540 标清', LD: '360 流畅'};
+        tr.forEach(t => { if (t.url) urls.push(tc[t.template_id], t.url); });
+        return {parse: 0, url: urls, header: {'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.aliyundrive.com/'}};
+    }
 };

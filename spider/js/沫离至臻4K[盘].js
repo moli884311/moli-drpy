@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离至臻4K[盘]',
-    host: 'https://mihdr.top',
+    host: 'https://www.miqk.cc',
     url: '/index.php/vod/show/id/fyclass.html',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',
     headers: {

@@ -24,16 +24,61 @@ var rule = {
             let shareData = await Baidu2.getShareData('https://pan.baidu.com/disk/main');
             let d = [];
             Object.keys(shareData).forEach(path => {
-                d.push({
-                    vod_id: shareData[path][0] ? shareData[path][0].path : path,
-                    vod_name: path.split('/').pop() || '百度网盘',
-                    vod_pic: '',
-                    vod_remarks: '文件夹',
-                    type_name: '百度网盘'
-                });
+                let items = shareData[path];
+                if (items && items.length > 0) {
+                    items.forEach(item => {
+                        d.push({
+                            vod_id: [item.path, item.uk, item.shareid, item.fsid].join('*'),
+                            vod_name: item.name || path.split('/').pop() || '百度文件',
+                            vod_pic: '',
+                            vod_remarks: item.isdir ? '文件夹' : '文件',
+                            type_name: '百度网盘'
+                        });
+                    });
+                }
             });
             return setResult(d);
         } catch(e) {return setResult([]);}
+    },
+    一级: async function () {
+        let {input} = this;
+        let cookie = ENV.get('baidu_cookie');
+        if (!cookie) return setResult([]);
+        try {
+            let parts = (input || '').split('*');
+            let shareData;
+            if (parts.length >= 3) {
+                shareData = await Baidu2.getShareData('https://pan.baidu.com/s/' + parts[2]);
+            } else {
+                shareData = await Baidu2.getShareData('https://pan.baidu.com/disk/main');
+            }
+            let d = [];
+            Object.keys(shareData).forEach(path => {
+                let items = shareData[path];
+                if (items && items.length > 0) {
+                    items.forEach(item => {
+                        d.push({
+                            vod_id: [item.path, item.uk, item.shareid, item.fsid].join('*'),
+                            vod_name: item.name || path.split('/').pop() || '百度文件',
+                            vod_pic: '',
+                            vod_remarks: item.isdir ? '文件夹' : '文件',
+                            type_name: '百度网盘'
+                        });
+                    });
+                }
+            });
+            return setResult(d);
+        } catch(e) {return setResult([]);}
+    },
+    二级: async function (ids) {
+        let {input} = this;
+        let data = (input || ids || '');
+        return {
+            vod_name: '百度文件',
+            vod_pic: '',
+            vod_play_from: '百度',
+            vod_play_url: data
+        };
     },
     lazy: async function (flag, id, flags) {
         let {input} = this;

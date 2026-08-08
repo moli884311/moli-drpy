@@ -56,6 +56,16 @@ var rule = {
             return setResult(d);
         } catch(e) {return setResult([]);}
     },
+    二级: async function (ids) {
+        let {input} = this;
+        let fid = (input || ids || '').split('*')[0];
+        return {
+            vod_name: '夸克文件',
+            vod_pic: '',
+            vod_play_from: '夸克',
+            vod_play_url: fid
+        };
+    },
     lazy: async function (flag, id, flags) {
         let {input} = this;
         let down = await Quark.downloadDirect(input);

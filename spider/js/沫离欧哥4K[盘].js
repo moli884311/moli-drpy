@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离欧哥4K[盘]',
-    host: 'https://woog.nxog.eu.org',
+    host: 'https://woog.nxog.fun',
     url: '/index.php/vod/show/id/fyclass.html',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',
     headers: {

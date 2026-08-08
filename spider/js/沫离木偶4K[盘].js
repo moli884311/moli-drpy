@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离木偶4K[盘]',
-    host: 'http://123.666291.xyz',
+    host: 'https://www.muou.site',
     url: '/index.php/vod/show/id/fyclass.html',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',
     headers: {

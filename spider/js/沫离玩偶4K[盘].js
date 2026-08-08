@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离玩偶4K[盘]',
-    host: 'https://woog.nxog.eu.org',
+    host: 'https://woog.nxog.fun',
     url: '/vodshow/fyclass-fyfilter.html',
     filter_url: '{{fl.area}}-{{fl.by or fl.time}}-{{fl.class}}-----fypage---{{fl.year}}',
     searchUrl: '/vodsearch/**--------fypage---.html',

@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离1234K[盘]',
-    host: 'https://123panfx.com',
+    host: 'https://pan1.me',
     url: '/index.php/vod/show/id/fyclass.html',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',
     play_parse: true,

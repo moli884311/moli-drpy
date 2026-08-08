@@ -10,7 +10,7 @@
 
 var rule = {
     title: '沫离多多4K[盘]',
-    host: 'https://tv.yydsys.top',
+    host: 'https://tv.yydsys.cc',
     url: '/index.php/vod/show/id/fyclass.html',
     searchUrl: '/index.php/vod/search/page/fypage/wd/**.html',
     headers: {

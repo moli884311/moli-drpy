@@ -56,8 +56,18 @@ var rule = {
             return setResult(d);
         } catch(e) {return setResult([]);}
     },
-    lazy: async function (flag, id, flags) {
+    二级: async function (ids) {
         let {input} = this;
+        let fid = (input || ids || '').split('*')[0];
+        return {
+            vod_name: 'UC文件',
+            vod_pic: '',
+            vod_play_from: 'UC',
+            vod_play_url: fid
+        };
+    },
+    lazy: async function (flag, id, flags) {
+        let {input, mediaProxyUrl} = this;
         let down = await UC.downloadDirect(input);
         return await UC.getLazyResult(down, mediaProxyUrl);
     }
