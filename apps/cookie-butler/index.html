@@ -152,7 +152,25 @@
                         .then(response => {
                             if (response.data.success) {
                                 alert(`Cookie 入库成功：${active_name} (${save_key})`);
-                            } else {
+                } else if (save_key.includes('pan123')) {
+                    const parts = textValue.trim().split(';');
+                    axios.post('/admin/cookie-set', {
+                        cookie_auth_code: cookie_auth_code,
+                        key: 'pan_passport',
+                        value: (parts[0] || '').trim().replaceAll('\n', '')
+                    }).then(() => {
+                        if (parts[1]) {
+                            axios.post('/admin/cookie-set', {
+                                cookie_auth_code: cookie_auth_code,
+                                key: 'pan_password',
+                                value: parts[1].trim().replaceAll('\n', '')
+                            }).catch(() => {});
+                        }
+                        alert(`Cookie 入库成功：${active_name}`);
+                    }).catch(error => {
+                        alert(`入库失败：${error.response.data?.message || error.message}`);
+                    });
+                } else {
                                 alert(`入库失败：${response.data.message}`);
                             }
                         })

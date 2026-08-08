@@ -1079,40 +1079,57 @@ class QuarkHandler {
         }
     }
 
-    //伪造token实现无限不转存
     async getUrl(shareId, stoken, fileId, fileToken) {
         await this.initQuark()
-        let token = await this.getToken()
-        let data = JSON.stringify({
-            "fids": [fileId],
-            "fids_token": [fileToken],
-            "pwd_id": shareId,
-            "stoken": stoken,
-            "speedup_session": "",
-            "token": token
-        });
-        let config = {
-            method: 'POST',
-            url: 'https://drive-pc.quark.cn/1/clouddrive/file/download?pr=ucpro&fr=pc',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/3.20.0 Chrome/112.0.5615.165 Electron/24.1.3.8 Safari/537.36 Channel/pckk_other_ch',
-                'Connection': 'keep-alive',
-                'Accept': '*/*,application/json;charset=utf-8',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Content-Type': 'application/json',
-                'Cookie': this.cookie
-            },
-            data: data
+        let fr = 'pr=ucpro&fr=pc&sys=win32';
+        let header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 QuarkPC/4.5.5.535',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Content-Type': 'application/json',
+            'Cookie': this.cookie
         };
-        let html = await axios.request(config).catch(e => e)
-        if (html.status === 200) {
-            return html.data.data.map(it => {
-                return {
-                    name: it.video_max_resolution,
+        let downloadApi = `https://drive-pc.quark.cn/1/clouddrive/file/download?${fr}`;
+
+        try {
+            let data = JSON.stringify({
+                "fids": [fileId],
+                "fids_token": [fileToken || fileId],
+                "pwd_id": shareId || '',
+                "stoken": stoken || '',
+                "speedup_session": "",
+                "token": ""
+            });
+            let html = (await axios.post(downloadApi, data, {headers: header})).data;
+            if (html.data?.[0]?.download_url) {
+                return html.data.map(it => ({
+                    name: it.video_max_resolution || '原画',
                     url: it.download_url
+                }));
+            }
+        } catch(e) {}
+
+        try {
+            let token = await this.getToken();
+            if (token) {
+                let data = JSON.stringify({
+                    "fids": [fileId],
+                    "fids_token": [fileToken || fileId],
+                    "pwd_id": shareId || '',
+                    "stoken": stoken || '',
+                    "speedup_session": "",
+                    "token": token
+                });
+                let html = (await axios.post(downloadApi, data, {headers: header})).data;
+                if (html.data?.[0]?.download_url) {
+                    return html.data.map(it => ({
+                        name: it.video_max_resolution || '原画',
+                        url: it.download_url
+                    }));
                 }
-            })
-        }
+            }
+        } catch(e) {}
+        return null;
     }
 
 

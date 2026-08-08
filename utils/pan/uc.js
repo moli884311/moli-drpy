@@ -718,17 +718,21 @@ class UCHandler {
         };
         if (Array.isArray(downCache)) {
             downCache.forEach((it) => {
-                if (it.url) {
-                    urls.push(it.name, it.url + "#isVideo=true##fastPlayMode##threads=10#");
-                }
-                if (mediaProxyUrl && it.download_url) {
-                    urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(it.download_url || it.url) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+                const dlUrl = it.download_url || it.url;
+                if (dlUrl) {
+                    urls.push(it.name || '原画', dlUrl + "#isVideo=true##fastPlayMode##threads=10#");
+                    if (mediaProxyUrl) {
+                        urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(dlUrl) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+                    }
                 }
             });
-        } else if (downCache && downCache.download_url) {
-            urls.push("UC原画", downCache.download_url);
-            if (mediaProxyUrl) {
-                urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(downCache.download_url) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+        } else if (downCache) {
+            const dlUrl = downCache.download_url || downCache.url;
+            if (dlUrl) {
+                urls.push("UC原画", dlUrl);
+                if (mediaProxyUrl) {
+                    urls.push("原代服", mediaProxyUrl + `?thread=${ENV.get('thread') || 6}&form=urlcode&randUa=1&url=` + encodeURIComponent(dlUrl) + '&header=' + encodeURIComponent(JSON.stringify(ucHeaders)));
+                }
             }
         }
         return {parse: 0, url: urls, header: ucHeaders};
