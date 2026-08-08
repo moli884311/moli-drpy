@@ -597,33 +597,38 @@ class QuarkHandler {
         }
 
         // 发起保存请求
-        const saveResult = await this.api(`share/sharepage/save?${this.pr}`, {
+        const saveData = {
             fid_list: [fileId],
-            fid_token_list: [fileToken],
             to_pdir_fid: this.saveDirId,
             pwd_id: shareId,
             stoken: stoken || this.shareTokenCache[shareId].stoken,
             pdir_fid: '0',
             scene: 'link',
-        });
+        };
+        if (fileToken) saveData.fid_token_list = [fileToken];
+        const saveResult = await this.api(`share/sharepage/save?${this.pr}`, saveData);
 
         // 轮询任务状态直到完成
+        console.log('[quark] save api response:', JSON.stringify(saveResult).substring(0, 200));
         if (saveResult.data && saveResult.data.task_id) {
-            if (saveResult.data.task_resp.data.save_as.save_as_top_fids.length > 0) {
-                return saveResult.data.task_resp.data.save_as.save_as_top_fids[0]
-            } else {
-                let retry = 0;
-                while (true) {
-                    const taskResult = await this.api(`task?${this.pr}&task_id=${saveResult.data.task_id}&retry_index=${retry}`, {}, {}, 'get');
-                    if (taskResult.data && taskResult.data.save_as && taskResult.data.save_as.save_as_top_fids && taskResult.data.save_as.save_as_top_fids.length > 0) {
-                        return taskResult.data.save_as.save_as_top_fids[0];
-                    }
-                    retry++;
-                    if (retry > 5) return null;
-                    await this.delay(1000);
+            const topFids = saveResult.data.task_resp?.data?.save_as?.save_as_top_fids;
+            if (topFids && topFids.length > 0) {
+                console.log('[quark] save immediate fid:', topFids[0]);
+                return topFids[0];
+            }
+            let retry = 0;
+            while (true) {
+                const taskResult = await this.api(`task?${this.pr}&task_id=${saveResult.data.task_id}&retry_index=${retry}`, {}, {}, 'get');
+                console.log('[quark] save polling:', JSON.stringify(taskResult).substring(0, 200));
+                if (taskResult.data && taskResult.data.save_as && taskResult.data.save_as.save_as_top_fids && taskResult.data.save_as.save_as_top_fids.length > 0) {
+                    return taskResult.data.save_as.save_as_top_fids[0];
                 }
+                retry++;
+                if (retry > 5) return null;
+                await this.delay(1000);
             }
         }
+        console.log('[quark] save FAILED - no task_id in response');
         return null;
     }
 
@@ -1050,8 +1055,10 @@ class QuarkHandler {
 
     async getUrl(shareId, stoken, fileId, fileToken) {
         await this.initQuark();
+        console.log('[quark] getUrl called:', {shareId, stoken: stoken?.substring(0, 20), fileId: fileId?.substring(0, 20), fileToken: fileToken?.substring(0, 20)});
         if (!this.saveFileIdCaches[fileId]) {
             const saveFileId = await this.save(shareId, stoken, fileId, fileToken, true);
+            console.log('[quark] getUrl save result:', saveFileId);
             if (!saveFileId) return null;
             this.saveFileIdCaches[fileId] = saveFileId;
         }
@@ -1060,12 +1067,14 @@ class QuarkHandler {
             resolutions: 'normal,low,high,super,2k,4k',
             supports: 'fmp4',
         });
+        console.log('[quark] getUrl file/v2/play response:', JSON.stringify(playResult).substring(0, 500));
         if (playResult.data && playResult.data.video_list) {
             return playResult.data.video_list.map(it => ({
                 name: it.resolution === 'low' ? '流畅' : it.resolution === 'high' ? '高清' : it.resolution === 'super' ? '超清' : it.resolution || '原画',
                 url: it.video_info.url
             }));
         }
+        console.log('[quark] getUrl file/v2/play failed, falling back to _getDownloadByFid');
         return await this._getDownloadByFid(this.saveFileIdCaches[fileId]);
     }
 

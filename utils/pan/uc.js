@@ -486,6 +486,7 @@ class UCHandler {
             pdir_fid: '0',
             scene: 'link',
         });
+        console.log('[uc] save api response:', JSON.stringify(saveResult).substring(0, 200));
         if (saveResult.data && saveResult.data.task_id) {
             let retry = 0;
             while (true) {
@@ -609,9 +610,11 @@ class UCHandler {
 
     async getDownload(shareId, stoken, fileId, fileToken, clean) {
         await this.initUC()
+        console.log('[uc] getDownload called:', {shareId, stoken: stoken?.substring(0, 20), fileId: fileId?.substring(0, 20), fileToken: fileToken?.substring(0, 20), clean, hasToken: !!this.token});
         if (!this.saveFileIdCaches[fileId]) {
 
             const saveFileId = await this.save(shareId, stoken, fileId, fileToken, clean);
+            console.log('[uc] getDownload save result:', saveFileId);
 
             if (!saveFileId) return null;
 
