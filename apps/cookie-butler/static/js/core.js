@@ -760,21 +760,6 @@ class QRCodeHandler {
     async _startCloudScan() {
         try {
             const reqId = QRCodeHandler.generateUUID();
-            let sessionCookie = '';
-            try {
-                const initRes = await axios({
-                    url: "/http", method: "POST", data: {
-                        url: "https://open.e.189.cn/api/logbox/oauth2/authorize.do?appId=cloud&redirectUrl=" +
-                             encodeURIComponent("https://cloud.189.cn/web/redirect.html?returnURL=/main.action"),
-                        method: "GET",
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-                            'Accept': 'text/html,application/xhtml+xml',
-                        },
-                    }
-                });
-                sessionCookie = this._formatCookies(initRes.data.headers['set-cookie']);
-            } catch(e) {}
             const res = await axios({
                 url: "/http", method: "POST", data: {
                     url: "https://open.e.189.cn/api/logbox/oauth2/getUUID.do",
@@ -784,7 +769,6 @@ class QRCodeHandler {
                         'Accept': 'application/json',
                         'Referer': 'https://open.e.189.cn/',
                         'Content-Type': 'application/x-www-form-urlencoded',
-                        'Cookie': sessionCookie,
                     },
                     data: 'appId=cloud',
                 }
@@ -793,8 +777,7 @@ class QRCodeHandler {
             if (!uuidData || uuidData.result !== 0) {
                 throw new Error("获取天翼二维码失败: " + (uuidData && uuidData.msg ? uuidData.msg : "未知错误"));
             }
-            const newCookies = this._formatCookies(res.data.headers['set-cookie']);
-            sessionCookie = (sessionCookie && newCookies) ? sessionCookie + '; ' + newCookies : (sessionCookie || newCookies);
+            const sessionCookie = this._formatCookies(res.data.headers['set-cookie']);
             this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = {
                 encryuuid: uuidData.encryuuid,
                 uuid: uuidData.uuid,
@@ -844,22 +827,37 @@ class QRCodeHandler {
             const result = data.result;
             const status = data.status;
             if (status === 0) {
-                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
-                let cookie = '';
-                if (data.redirectUrl) {
+                let cookie = state.sessionCookie || '';
+                const scanCookies = this._formatCookies(res.data.headers['set-cookie']);
+                cookie = cookie + (cookie && scanCookies ? ';' : '') + scanCookies;
+                if (data.redirectUrl && cookie) {
                     try {
                         const redir = await axios({
                             url: "/http", method: "POST", data: {
                                 url: data.redirectUrl,
                                 method: "GET",
-                                headers: {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36'},
-                                maxRedirects: 0,
+                                headers: {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36', 'Cookie': cookie},
+                                maxRedirects: 5,
                             }
-                        }).catch(e => e.response);
-                        cookie = this._formatCookies(redir.data.headers['set-cookie']);
+                        });
+                        const redirCookies = this._formatCookies(redir.data.headers['set-cookie']);
+                        cookie = cookie + (redirCookies ? ';' : '') + redirCookies;
                     } catch (e) {}
                 }
-                cookie = cookie + (cookie ? ';' : '') + this._formatCookies(res.data.headers['set-cookie']);
+                if (cookie) {
+                    try {
+                        const cloudResp = await axios({
+                            url: "/http", method: "POST", data: {
+                                url: "https://cloud.189.cn/api/open/user/getUserInfoForPortal.action",
+                                method: "GET",
+                                headers: {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36', 'Cookie': cookie},
+                            }
+                        });
+                        const cloudCookies = this._formatCookies(cloudResp.data.headers['set-cookie']);
+                        cookie = cookie + (cloudCookies ? ';' : '') + cloudCookies;
+                    } catch (e) {}
+                }
+                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
                 return {status: QRCodeHandler.STATUS_CONFIRMED, cookie: cookie};
             } else if (status === -11002) {
                 state.expireCount = 0;
@@ -881,33 +879,11 @@ class QRCodeHandler {
 
     // 123网盘平台相关方法（账号密码登录）
     async _startPan123Scan() {
-        try {
-            const account = prompt('请输入123网盘手机号(账号):');
-            if (!account) return {status: QRCodeHandler.STATUS_EXPIRED, message: '用户取消'};
-            const password = prompt('请输入123网盘密码:');
-            if (!password) return {status: QRCodeHandler.STATUS_EXPIRED, message: '用户取消'};
-            const res = await axios({
-                url: "/http", method: "POST", data: {
-                    url: "https://login.123pan.com/api/user/sign_in",
-                    method: "POST",
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Content-Type': 'application/json',
-                        'App-Version': '43',
-                        'Referer': 'https://login.123pan.com/centerlogin?redirect_url=https%3A%2F%2Fwww.123684.com&source_page=website',
-                    },
-                    data: JSON.stringify({"passport": account, "password": password, "remember": true}),
-                }
-            });
-            const data = res.data.data || res.data;
-            if (!data || !data.token) {
-                throw new Error('登录失败: ' + (data?.msg || res.data?.message || '未知错误'));
-            }
-            return {status: QRCodeHandler.STATUS_CONFIRMED, cookie: `${account};${password}`, message: '登录成功'};
-        } catch (e) {
-            this.platformStates[QRCodeHandler.PLATFORM_PAN123] = null;
-            throw new Error('123盘登录失败: ' + e.message);
-        }
+        const account = prompt('请输入123网盘手机号(账号):');
+        if (!account) return {status: QRCodeHandler.STATUS_EXPIRED, message: '用户取消'};
+        const password = prompt('请输入123网盘密码:');
+        if (!password) return {status: QRCodeHandler.STATUS_EXPIRED, message: '用户取消'};
+        return {status: QRCodeHandler.STATUS_CONFIRMED, cookie: `${account};${password}`, message: '账号信息已收集'};
     }
 
     async _checkPan123Status() {

@@ -677,7 +677,7 @@ class UCHandler {
             const down = await this.api(`file/download?${this.pr}`, {
                 fids: [this.saveFileIdCaches[fileId]],
             });
-            if (down.data) {
+            if (down.data?.[0]) {
                 const low_url = down.data[0].download_url;
                 const low_cookie = this.cookie;
                 const low_headers = {
@@ -696,7 +696,7 @@ class UCHandler {
                         console.log(`getDownload:自动刷新UC cookie失败:${e.message}`)
                     }
                 }
-                return [{name: '原画', download_url: low_url}];
+                return [{name: '原画', url: low_url, download_url: low_url}];
             }
         }
         return null;
