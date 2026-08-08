@@ -757,30 +757,39 @@ class QRCodeHandler {
         }
     }
 
-    // 天翼云盘平台相关方法
     async _startCloudScan() {
         try {
+            const reqId = QRCodeHandler.generateUUID();
             const res = await axios({
-                url: "/http", method: "GET", data: {
-                    url: "https://cloud.189.cn/api/portal/login/qrcode.action",
+                url: "/http", method: "POST", data: {
+                    url: "https://open.e.189.cn/api/logbox/oauth2/getUUID.do",
+                    method: "POST",
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
                         'Accept': 'application/json',
-                    }
+                        'Referer': 'https://open.e.189.cn/',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    data: 'appId=cloud',
                 }
             });
-            const data = res.data.data || res.data;
-            if (data.uuid) {
-                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = {uuid: data.uuid};
-                return {
-                    status: QRCodeHandler.STATUS_PENDING,
-                    qr_image: "https://cloud.189.cn/api/portal/login/qrcode.action?uuid=" + data.uuid,
-                };
+            const uuidData = res.data.data;
+            if (!uuidData || uuidData.result !== 0) {
+                throw new Error("获取天翼二维码失败: " + (uuidData && uuidData.msg ? uuidData.msg : "未知错误"));
             }
-            throw new Error("获取天翼二维码失败");
+            const sessionCookie = this._formatCookies(res.data.headers['set-cookie']);
+            this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = {
+                encryuuid: uuidData.encryuuid,
+                uuid: uuidData.uuid,
+                encodeuuid: uuidData.encodeuuid,
+                sessionCookie: sessionCookie,
+                reqId: reqId,
+            };
+            const qrCode = await this._generateQRCode(uuidData.uuid);
+            return {qrcode: qrCode, status: QRCodeHandler.STATUS_NEW};
         } catch (e) {
             this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
-            throw new Error(e.message);
+            throw e;
         }
     }
 
@@ -788,22 +797,59 @@ class QRCodeHandler {
         const state = this.platformStates[QRCodeHandler.PLATFORM_CLOUD];
         if (!state) return {status: QRCodeHandler.STATUS_EXPIRED};
         try {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const dateStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                           pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds()) +
+                           Math.floor(Math.random() * 24);
             const res = await axios({
-                url: "/http", method: "GET", data: {
-                    url: `https://cloud.189.cn/api/portal/login/qrcodeCheck.action?uuid=${state.uuid}`,
+                url: "/http", method: "POST", data: {
+                    url: "https://open.e.189.cn/api/logbox/oauth2/qrcodeLoginState.do",
+                    method: "POST",
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
                         'Accept': 'application/json',
-                    }
+                        'Referer': 'https://open.e.189.cn/',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Cookie': state.sessionCookie || '',
+                        'REQID': state.reqId,
+                    },
+                    data: 'appId=cloud&encryuuid=' + encodeURIComponent(state.encryuuid) +
+                          '&uuid=' + encodeURIComponent(state.uuid) +
+                          '&clientType=1&date=' + encodeURIComponent(dateStr) +
+                          '&timeStamp=' + String(now.getTime()) +
+                          '&returnUrl=' + encodeURIComponent('https://cloud.189.cn/web/redirect.html?returnURL=/main.action'),
                 }
             });
-            const data = res.data.data || res.data;
-            if (data.result === 0 || data.recode?.includes('成功')) {
+            const data = res.data.data;
+            if (!data) return {status: QRCodeHandler.STATUS_NEW};
+            const result = data.result;
+            const status = data.status;
+            if (status === 0) {
                 this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
-                const cookie = this._formatCookies(res.headers['set-cookie']);
-                // 提取天翼cookie并保存到cloud_cookie
-                return {status: QRCodeHandler.STATUS_CONFIRMED, token: cookie};
+                let cookie = '';
+                if (data.redirectUrl) {
+                    try {
+                        const redir = await axios({
+                            url: "/http", method: "POST", data: {
+                                url: data.redirectUrl,
+                                method: "GET",
+                                headers: {'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36'},
+                                maxRedirects: 0,
+                            }
+                        }).catch(e => e.response);
+                        cookie = this._formatCookies(redir.data.headers['set-cookie']);
+                    } catch (e) {}
+                }
+                cookie = cookie + (cookie ? ';' : '') + this._formatCookies(res.data.headers['set-cookie']);
+                return {status: QRCodeHandler.STATUS_CONFIRMED, cookie: cookie};
+            } else if (status === -11002) {
+                return {status: QRCodeHandler.STATUS_SCANED};
+            } else if (result === -20099 || status === -11001) {
+                this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
+                return {status: QRCodeHandler.STATUS_EXPIRED};
             }
+            return {status: QRCodeHandler.STATUS_NEW};
         } catch (e) {
             this.platformStates[QRCodeHandler.PLATFORM_CLOUD] = null;
             throw new Error(e.message);
