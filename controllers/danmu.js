@@ -1,7 +1,8 @@
 /**
- * 弹幕控制器 - 本地整合版（修复 XML 重复声明）
+ * 弹幕控制器 - 进程内整合版
  * 
- * 整合 danmu-api 到 drpy 内部，所有请求通过本地 127.0.0.1:9321 调用。
+ * 整合 danmu-api 到 drpy 内部，本地请求通过进程内直调（无需 9321 外部进程），
+ * 仅远程备用接口走 HTTP。
  */
 
 import axios from 'axios';
@@ -9,8 +10,9 @@ import http from 'http';
 import https from 'https';
 import { URL } from 'url';
 import { LRUCache } from 'lru-cache';
+import { danmuHttpGet, danmuProxy, readDanmuConfig, writeDanmuConfig, DANMU_EDITABLE_CONFIG } from '../libs_drpy/danmu-bridge.js';
 
-console.log('[drplayer] 模块加载，弹幕功能已启用（本地 danmu-api）');
+console.log('[drplayer] 模块加载，弹幕功能已启用（进程内 danmu-api）');
 
 // ── 纯净 Axios 实例 ──
 const agentOptions = {
@@ -40,6 +42,20 @@ const PIZAZZ_SEARCH_BUDGET = 6000;
 const SIMILARITY_THRESHOLD = 0.75;
 const DANMU_CACHE_TTL = 10 * 60 * 1000;
 const danmuResultCache = new LRUCache({ max: 1000, ttl: DANMU_CACHE_TTL });
+
+// ── 内存日志缓冲（面板日志查看用，最多 500 条） ──
+const MAX_DANMU_LOGS = 500;
+const danmuLogs = [];
+
+function appendDanmuLog(entry) {
+    danmuLogs.push({
+        time: new Date().toISOString(),
+        ...entry,
+    });
+    if (danmuLogs.length > MAX_DANMU_LOGS) {
+        danmuLogs.splice(0, danmuLogs.length - MAX_DANMU_LOGS);
+    }
+}
 
 // ── 工具函数 ──
 function getRealName(str) {
@@ -79,6 +95,13 @@ async function httpGet(url, headers = {}, timeout = 10000, retries = 1) {
     for (let attempt = 0; attempt <= retries; attempt++) {
         if (attempt > 0) await delay(1000 * attempt);
         try {
+            if (url.startsWith(BUILTIN_API)) {
+                const body = await danmuHttpGet(url, timeout);
+                if (body) return body;
+                lastError = "进程内调用返回空";
+                if (attempt === retries) break;
+                continue;
+            }
             const resp = await cleanAxios.get(url, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
@@ -657,6 +680,75 @@ export default async function(fastify, opts) {
         reply.send({ status: 'ok', module: 'drplayer/danmu' });
     });
 
+    // 日志查看接口（面板用）
+    fastify.get('/danmu/logs', async (req, reply) => {
+        const limit = parseInt(req.query.limit || '100', 10);
+        const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), MAX_DANMU_LOGS) : 100;
+        reply.header('Access-Control-Allow-Origin', '*');
+        reply.send({
+            total: danmuLogs.length,
+            logs: danmuLogs.slice(-safeLimit).reverse(),
+        });
+    });
+
+    // 清空日志接口（面板用）
+    fastify.get('/danmu/logs/clear', async (req, reply) => {
+        danmuLogs.length = 0;
+        reply.header('Access-Control-Allow-Origin', '*');
+        reply.send({ code: 200, msg: '日志已清空' });
+    });
+
+    // 配置读取接口（面板用）
+    fastify.get('/danmu/config', async (req, reply) => {
+        const result = readDanmuConfig();
+        reply.header('Access-Control-Allow-Origin', '*');
+        reply.send({ ...result, meta: DANMU_EDITABLE_CONFIG });
+    });
+
+    // 配置写入接口（面板用）
+    fastify.post('/danmu/config', async (req, reply) => {
+        reply.header('Access-Control-Allow-Origin', '*');
+        const body = req.body || {};
+        if (!body || typeof body !== 'object' || Object.keys(body).length === 0) {
+            reply.send({ ok: false, error: '没有要更新的配置项' });
+            return;
+        }
+        const result = writeDanmuConfig(body);
+        appendDanmuLog({ name: '[配置更新]', episode: JSON.stringify(body), status: result.ok ? 'success' : 'error', source: 'config', count: 0, duration: 0, error: result.error });
+        reply.send(result);
+    });
+
+    // 弹幕源连通性检测（面板用）
+    fastify.get('/danmu/sources/check', async (req, reply) => {
+        reply.header('Access-Control-Allow-Origin', '*');
+        const cfg = readDanmuConfig();
+        const otherServer = cfg.ok ? (cfg.config.OTHER_SERVER || '') : '';
+        const vodServers = cfg.ok ? (cfg.config.VOD_SERVERS || '') : '';
+        const targets = [];
+        if (otherServer) targets.push({ name: '弹幕主源', url: otherServer });
+        if (vodServers) {
+            for (const entry of vodServers.split(',')) {
+                const idx = entry.lastIndexOf('@');
+                const name = idx > 0 ? entry.substring(0, idx) : entry;
+                const url = idx > 0 ? entry.substring(idx + 1) : entry;
+                targets.push({ name: `VOD:${name}`, url });
+            }
+        }
+        const results = await Promise.all(targets.map(async t => {
+            const start = Date.now();
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 8000);
+                const resp = await fetch(t.url, { method: 'GET', signal: controller.signal, redirect: 'follow' });
+                clearTimeout(timer);
+                return { name: t.name, url: t.url, ok: resp.ok, status: resp.status, duration: Date.now() - start };
+            } catch (e) {
+                return { name: t.name, url: t.url, ok: false, status: 0, duration: Date.now() - start, error: e.cause?.code || e.message };
+            }
+        }));
+        reply.send({ total: results.length, results });
+    });
+
     // 主弹幕接口
     fastify.get('/danmu', async (req, reply) => {
         const format = (req.query.format || 'xml').toLowerCase();
@@ -678,20 +770,26 @@ export default async function(fastify, opts) {
         try {
             const name = req.query.name || req.query.vodName || '';
             const episode = (req.query.episode || req.query.vodIndex || '1').trim();
+            const startTime = Date.now();
 
             console.log(`[danmu] 请求: name=${name}, episode=${episode}`);
 
-            if (!name) return sendEmpty();
+            if (!name) {
+                appendDanmuLog({ name, episode, status: 'error', source: 'N/A', count: 0, duration: Date.now() - startTime, error: '缺少 name 参数' });
+                return sendEmpty();
+            }
 
             const realName = getRealName(name);
             console.log(`[danmu] realName=${realName}`);
 
             let danmakuResult = { xml: '', json: [], count: 0 };
+            let usedSource = '';
 
             // 主接口
             try {
                 console.log(`[danmu] 尝试主接口...`);
                 danmakuResult = await searchDanmuFromApi(BUILTIN_API, realName, episode);
+                if (danmakuResult.xml) usedSource = '内置 danmu-api';
             } catch (e) {
                 console.warn(`[danmu] 主接口异常: ${e.message}`);
             }
@@ -701,6 +799,7 @@ export default async function(fastify, opts) {
                 try {
                     console.log(`[danmu] 尝试备用接口...`);
                     danmakuResult = await searchDanmuFromApi(BACKUP_API, realName, episode, BACKUP_SEARCH_BUDGET);
+                    if (danmakuResult.xml) usedSource = '备用 danmuapi';
                 } catch (e) {
                     console.warn(`[danmu] 备用接口异常: ${e.message}`);
                 }
@@ -711,6 +810,7 @@ export default async function(fastify, opts) {
                 try {
                     console.log(`[danmu] 尝试副接口1 (danmu.iyo LogVar)...`);
                     danmakuResult = await searchDanmuFromApi(BACKUP_API_LOGVAR, realName, episode, BACKUP_SEARCH_BUDGET);
+                    if (danmakuResult.xml) usedSource = 'LogVar';
                 } catch (e) {
                     console.warn(`[danmu] 副接口1异常: ${e.message}`);
                 }
@@ -721,6 +821,7 @@ export default async function(fastify, opts) {
                 try {
                     console.log(`[danmu] 尝试副接口2 (pizazz/1314)...`);
                     danmakuResult = await searchDanmuFromApi(BACKUP_API_1314, realName, episode, PIZAZZ_SEARCH_BUDGET);
+                    if (danmakuResult.xml) usedSource = 'pizazz/1314';
                 } catch (e) {
                     console.warn(`[danmu] 副接口2异常: ${e.message}`);
                 }
@@ -731,6 +832,15 @@ export default async function(fastify, opts) {
             } else {
                 console.log(`[danmu] 未获取到弹幕，返回空`);
             }
+
+            appendDanmuLog({
+                name: realName,
+                episode,
+                status: danmakuResult.xml ? 'success' : 'empty',
+                source: usedSource || 'N/A',
+                count: danmakuResult.count || 0,
+                duration: Date.now() - startTime,
+            });
 
             if (format === 'json') {
                 reply.header('Content-Type', 'application/json; charset=utf-8');
@@ -744,7 +854,53 @@ export default async function(fastify, opts) {
             return reply.send(danmakuXml);
         } catch (error) {
             console.error(`[danmu] 路由处理异常:`, error.stack || error.message);
+            appendDanmuLog({ name: req.query.name || '', episode: req.query.episode || '1', status: 'error', source: 'N/A', count: 0, duration: 0, error: error.message });
             return sendEmpty('服务内部错误');
+        }
+    });
+
+    // ── 原版完整弹幕面板（配置预览/日志/接口调试/推送弹幕/请求记录/系统配置） ──
+    // 面板 HTML 挂在 /danmu/panel，其内部 API 请求经 customBaseUrl 前缀统一走 /danmu/panel/*，
+    // 这里剥掉前缀后转发给进程内 danmu-api 的 handleRequest。
+    const PANEL_BASE = '/danmu/panel';
+
+    async function renderPanel() {
+        const result = await danmuProxy('GET', '/', {});
+        if (result.status !== 200) return { status: result.status, body: result.body };
+        let html = result.body;
+        // 注入默认 customBaseUrl，让面板所有 fetch 请求带上 /danmu/panel 前缀
+        html = html.replace(
+            "getItem('logvar_api_base_url') || ''",
+            "getItem('logvar_api_base_url') || '/danmu/panel'"
+        );
+        return { status: 200, body: html };
+    }
+
+    fastify.get(PANEL_BASE, async (req, reply) => {
+        const { status, body } = await renderPanel();
+        reply.header('Content-Type', 'text/html; charset=utf-8');
+        reply.status(status).send(body);
+    });
+
+    fastify.get(`${PANEL_BASE}/`, async (req, reply) => {
+        const { status, body } = await renderPanel();
+        reply.header('Content-Type', 'text/html; charset=utf-8');
+        reply.status(status).send(body);
+    });
+
+    // 面板 API 通配转发（剥 /danmu/panel 前缀）
+    fastify.route({
+        method: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        url: `${PANEL_BASE}/*`,
+        handler: async (req, reply) => {
+            const subPath = '/' + (req.params['*'] || '');
+            const result = await danmuProxy(req.method, subPath, req.query || {}, req.body || null);
+            reply.header('Access-Control-Allow-Origin', '*');
+            for (const [key, value] of Object.entries(result.headers || {})) {
+                if (['content-length', 'transfer-encoding', 'connection'].includes(key.toLowerCase())) continue;
+                try { reply.header(key, value); } catch (e) {}
+            }
+            reply.status(result.status).send(result.body);
         }
     });
 
