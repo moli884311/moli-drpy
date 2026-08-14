@@ -32,14 +32,12 @@ fi
 docker run -d \
     --name "$NEW_NAME" \
     -p 5757:5757 \
-    -p 9321:9321 \
     --restart unless-stopped \
     "$IMAGE_TAG"
 
 # 等待就绪并健康检查
 for i in $(seq 1 20); do
-    if curl -sf "http://127.0.0.1:5757/danmu/ping" >/dev/null 2>&1 &&
-       curl -sf "http://127.0.0.1:9321/api/v2/search/anime?keyword=test" >/dev/null 2>&1; then
+    if curl -sf "http://127.0.0.1:5757/danmu/ping" >/dev/null 2>&1; then
         echo "部署完成，服务已就绪。新容器: $NEW_NAME"
         echo "旧容器 $CONTAINER_NAME 已停止保留，确认新容器正常后手动清理："
         echo "  docker rm $CONTAINER_NAME"

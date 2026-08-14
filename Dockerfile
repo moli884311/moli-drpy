@@ -65,7 +65,7 @@ RUN python3 -m venv /app/.venv && \
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 5757 9321
+EXPOSE 5757
 
 # 修改 CMD 为执行启动脚本
 CMD ["/entrypoint.sh"]
