@@ -78,7 +78,7 @@ Entries discovered by the Agent during task execution should follow this format:
 - Context: Discovered by Agent while debugging "弹幕没了" on the production deploy of moli-drpy
 - Category: Operations & Deployment
 - Instructions:
-  - Production servers: `http://8.130.134.173:5757` is the drpy main service (danmu routes live here); `http://8.130.134.173:9321` is the danmu-api instance and is publicly reachable. Both health checks via `curl`.
+  - Production server: `http://8.130.134.173:5757` is the drpy main service (danmu routes live here, single Docker container). The old `9321` danmu-api instance is DEPRECATED (danmu is now in-process); no separate 9321 process/port exists anymore.
   - danmu-api `/api/v2/search/episodes` (multi-platform aggregation) takes ~10s EVERY time for a title with no danmu results (no-result responses are NOT cached); results ARE cached (2nd identical call ~0.1s). The un-prefixed `/search/episodes` is only fast because it hits that same cache.
   - Prefer `/api/v2/fongmi/danmaku?name=剧名&episode=集数` as the fast path: ~0.2s for indexed titles, returns `[{name, url}]` (absolute comment URL), empty `[]` when no hit; then fetch the comment URL (rewrite host to the local base) with `?format=xml` to get Bilibili `<d>` XML in ~0.6s.
    - An 8s axios timeout on search + BUILTIN_MAX_RETRY=1 + multiple query modes stacked to 50s+ hangs; the fix (commit 5e7582b) is fongmi-first + a 10s overall Promise.race budget so the route always returns within budget.
@@ -93,3 +93,14 @@ Entries discovered by the Agent during task execution should follow this format:
   - `controllers/danmu.js` routes ALL local `BUILTIN_API` (http://127.0.0.1:9321/) HTTP calls through `danmuHttpGet` in `httpGet()`; remote backup APIs still use axios. The 9321 process is now optional — drpy serves `/danmu` without it.
   - drpy root needs its own `npm install` (291 packages) — `node index.js` fails with `ERR_MODULE_NOT_FOUND: qs` if missing. Main service port 5757, WebSocket 57575.
   - danmu_api's esm-shim triggers on Node <20.19 (this sandbox is v18.20.4) but `http-util.js` still uses native fetch because `WebAssembly` is defined; the shim only matters for node-fetch v3 imports.
+
+[Project Knowledge Summary]
+- Date: 2026-08-14
+- Context: Discovered by Agent while redeploying moli-drpy from GitHub on the production server
+- Category: Operations & Deployment
+- Instructions:
+  - Production deploy is Docker-based: image `moli-drpy:latest`, container name `moli-drpy`, port `5757->5757`, `--restart unless-stopped`. Source clone lives at `/opt/moli-drpy` (git, `--depth 1`). Build with `docker build -t moli-drpy:latest .` (long, ~15min; alpine apk + yarn + puppeteer Chromium + python venv/pip all via npmmirror).
+  - `deploy.sh` and `Dockerfile` no longer reference 9321 (commit b77c2d8); container runs only `node /app/index.js` + a python `t4_daemon.py` (127.0.0.1:57570). Do NOT re-add 9321 health checks.
+  - Runtime data lives inside the container (NO volume mounts). On rebuild, back up first: `config/env.json` (Bili/Baidu cookies), `custom.json`, `video-cms/data.db`, `public/sub/`, `public/monkey/`, `data/mv/`, `data/source-checker/` via `docker cp`, then restore into the new container and `docker restart`.
+  - Rebuild sequence: stop+rm old container & image → `mv /opt/moli-drpy /opt/moli-drpy-old-<ts>` → `git clone --depth 1 <repo> /opt/moli-drpy` → build → `docker run -d --name moli-drpy -p 5757:5757 --restart unless-stopped moli-drpy:latest` → restore data → restart.
+  - `/danmu` requires URL-encoded Chinese params; unencoded CJK yields HTTP 400. Use e.g. `name=%E6%96%97%E7%A0%B4%E8%8B%8D%E7%A9%B9`.
