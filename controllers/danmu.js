@@ -868,10 +868,12 @@ export default async function(fastify, opts) {
         const result = await danmuProxy('GET', '/', {});
         if (result.status !== 200) return { status: result.status, body: result.body };
         let html = result.body;
-        // 注入默认 customBaseUrl，让面板所有 fetch 请求带上 /danmu/panel 前缀
+        // 注入默认 customBaseUrl，让面板所有 fetch 请求带上 /danmu/panel 前缀。
+        // 强制覆盖 localStorage 旧值：面板固定挂在 /danmu/panel，旧的反代地址（如 9321）
+        // 会污染 customBaseUrl 导致「获取配置失败」，这里直接固化默认值。
         html = html.replace(
-            "getItem('logvar_api_base_url') || ''",
-            "getItem('logvar_api_base_url') || '/danmu/panel'"
+            "let customBaseUrl = localStorage.getItem('logvar_api_base_url') || ''",
+            "let customBaseUrl = '/danmu/panel'"
         );
         return { status: 200, body: html };
     }
