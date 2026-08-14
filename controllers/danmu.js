@@ -10,9 +10,13 @@ import http from 'http';
 import https from 'https';
 import { URL } from 'url';
 import { LRUCache } from 'lru-cache';
-import { danmuHttpGet, danmuProxy, readDanmuConfig, writeDanmuConfig, DANMU_EDITABLE_CONFIG } from '../libs_drpy/danmu-bridge.js';
+import { danmuHttpGet, danmuProxy, readDanmuConfig, writeDanmuConfig, setDanmuAdminToken, DANMU_EDITABLE_CONFIG } from '../libs_drpy/danmu-bridge.js';
+import { ENV } from '../utils/env.js';
 
 console.log('[drplayer] 模块加载，弹幕功能已启用（进程内 danmu-api）');
+
+// 面板「系统配置」复用 drpy 的 api_pwd 鉴权：注入为 danmu-api 的 ADMIN_TOKEN
+setDanmuAdminToken(ENV.get('api_pwd', process.env.API_PWD || 'dzyyds'));
 
 // ── 纯净 Axios 实例 ──
 const agentOptions = {

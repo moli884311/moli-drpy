@@ -10,6 +10,17 @@ const ENV_PATH = path.join(danmuApiRoot, 'config', '.env');
 
 let handleRequest = null;
 let loaded = false;
+let drpyApiPwd = '';
+
+// 把 drpy 的 api_pwd 注入为 danmu-api 的 ADMIN_TOKEN，
+// 使面板「系统配置」复用 drpy 的接口密码鉴权（首页 ?pwd= 自动带，直接访问手动输入）。
+// 若 danmu-api 的 .env 已显式配置 ADMIN_TOKEN，则优先使用显式配置，不覆盖。
+export function setDanmuAdminToken(pwd) {
+    drpyApiPwd = pwd || '';
+    if (drpyApiPwd && !(process.env.ADMIN_TOKEN && process.env.ADMIN_TOKEN.trim())) {
+        process.env.ADMIN_TOKEN = drpyApiPwd;
+    }
+}
 
 async function ensureLoaded() {
     if (loaded) return;
@@ -18,6 +29,10 @@ async function ensureLoaded() {
         dotenv.config({ path: ENV_PATH, override: true });
     } catch (e) {
         console.warn(`[danmu-bridge] dotenv 加载失败: ${e.message}`);
+    }
+    // dotenv 加载 .env（其中 ADMIN_TOKEN 可能为空）后，回退注入 drpy 的 api_pwd
+    if (drpyApiPwd && !(process.env.ADMIN_TOKEN && process.env.ADMIN_TOKEN.trim())) {
+        process.env.ADMIN_TOKEN = drpyApiPwd;
     }
     const worker = await import(pathToFileURL(path.join(danmuApiRoot, 'danmu_api', 'worker.js')).href);
     handleRequest = worker.handleRequest;

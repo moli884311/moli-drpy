@@ -117,6 +117,7 @@ let latestVersion = '';
 let currentToken = 'globals.currentToken';
 let currentAdminToken = ''; // admin token，用于系统管理
 let originalToken = '';
+let adminAuthed = false; // 是否已通过 pwd/路径 token 鉴权为管理员
 
 // 反向代理/API基础路径配置
 // 从LocalStorage获取用户自定义的Base URL
@@ -430,6 +431,13 @@ function switchSection(section, event = null) {
         
         // 如果是系统配置页面，还需要检查是否配置了ADMIN_TOKEN且URL中的token等于currentAdminToken
         if (section === 'env') {
+            // 未通过 pwd/路径 token 鉴权时，提示输入面板访问密码
+            if (!checkAdminToken()) {
+                setTimeout(() => {
+                    promptPanelPwd();
+                }, 100);
+                return;
+            }
             // 检查部署平台配置
             checkDeployPlatformConfig().then(result => {
                 if (!result.success) {
@@ -532,6 +540,12 @@ function closeModal() {
 // 页面加载完成后初始化时获取一次日志
 async function init() {
     try {
+        // 支持从首页跳转携带 ?pwd= 参数：先将其作为 admin token 尝试获取配置，
+        // 后端会校验 pwd 是否为 api_pwd，通过后 config 返回真实 ADMIN_TOKEN。
+        const panelPwd = new URLSearchParams(window.location.search).get('pwd');
+        if (panelPwd) {
+            currentAdminToken = panelPwd;
+        }
         await updateApiEndpoint(); // 等待API端点更新完成
         getDockerVersion();
         // 从API获取配置信息，包括检查是否有admin token

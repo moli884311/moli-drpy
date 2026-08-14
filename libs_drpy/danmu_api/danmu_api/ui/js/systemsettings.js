@@ -559,6 +559,11 @@ function confirmDeploymentByLogs() {
 
 // 检查URL中的token是否与currentAdminToken匹配
 function checkAdminToken() {
+    // 已通过 ?pwd= 参数（api_pwd）鉴权成功
+    if (adminAuthed) {
+        return true;
+    }
+
     let _reverseProxy = customBaseUrl; // 使用全局变量 customBaseUrl
 
     // 获取URL路径并提取token
@@ -668,7 +673,10 @@ async function checkDeployPlatformConfig() {
 async function fetchAndSetConfig() {
     const config = await fetch(buildApiUrl('/api/config', true)).then(response => response.json());
     const hasAdminToken = config.hasAdminToken;
-    currentAdminToken = config.originalEnvVars?.ADMIN_TOKEN || '';
+    const rawAdminToken = config.originalEnvVars?.ADMIN_TOKEN || '';
+    currentAdminToken = rawAdminToken;
+    // 真实 ADMIN_TOKEN（非空、非脱敏星号）才视为已鉴权（pwd 校验通过或路径 token 正确）
+    adminAuthed = rawAdminToken !== '' && rawAdminToken !== '*'.repeat(rawAdminToken.length);
     return config;
 }
 
@@ -678,8 +686,18 @@ function checkAndHandleAdminToken() {
         // 禁用系统配置按钮并添加提示
         const envNavBtn = document.getElementById('env-nav-btn');
         if (envNavBtn) {
-            envNavBtn.title = '请先配置ADMIN_TOKEN并使用正确的admin token访问以启用系统管理功能';
+            envNavBtn.title = '请先输入面板访问密码（api_pwd）以启用系统管理功能';
         }
+    }
+}
+
+// 提示用户输入面板访问密码（api_pwd），输入后携带 ?pwd= 跳转重新鉴权
+function promptPanelPwd() {
+    const pwd = window.prompt('请输入面板访问密码（api_pwd）：');
+    if (pwd) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('pwd', pwd.trim());
+        window.location.href = url.toString();
     }
 }
 
