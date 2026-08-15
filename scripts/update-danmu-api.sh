@@ -28,6 +28,9 @@ rsync -a --delete \
 echo "==> 应用本地定制补丁（fongmi format=xml）..."
 node "$ROOT_DIR/scripts/patch-danmu-api-fongmi.mjs"
 
+echo "==> 应用本地定制补丁（面板 api_pwd 鉴权）..."
+node "$ROOT_DIR/scripts/patch-danmu-api-panel-auth.mjs"
+
 echo "==> 更新后版本..."
 NEW_VER="$(grep -oE "VERSION: '[^']+'" "$DANMU_DIR/danmu_api/configs/globals.js" | head -1 || true)"
 echo "    $OLD_VER -> $NEW_VER"
