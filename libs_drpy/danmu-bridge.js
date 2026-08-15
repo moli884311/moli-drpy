@@ -76,10 +76,11 @@ export async function danmuHttpGet(url, timeoutMs = 15000) {
  * 返回完整响应（status + headers + body）。用于挂载原版弹幕面板及其全部系统 API。
  * 注意 deployPlatform 传 'node'，使系统配置（setEnv 等）走 NodeHandler 写入本地 .env。
  */
-export async function danmuProxy(method, pathname, params = {}, body = null, timeoutMs = 60000) {
+export async function danmuProxy(method, pathname, params = {}, body = null, timeoutMs = 60000, host = '127.0.0.1') {
     await ensureLoaded();
     const qs = new URLSearchParams(params).toString();
-    const url = `http://127.0.0.1${pathname}${qs ? '?' + qs : ''}`;
+    const origin = /^https?:\/\//i.test(host) ? host : `http://${host}`;
+    const url = `${origin}${pathname}${qs ? '?' + qs : ''}`;
     const headers = {};
     const init = { method: (method || 'GET').toUpperCase(), headers };
     if (init.method !== 'GET' && init.method !== 'HEAD' && body != null) {

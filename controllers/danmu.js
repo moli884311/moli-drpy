@@ -910,6 +910,39 @@ export default async function(fastify, opts) {
         }
     });
 
+    // ── 原版 danmu-api 接口直通（FongMi 等客户端直接访问 /api/v2/* 与 /danmaku） ──
+    // 把客户端请求的 Host 透传给进程内 handleRequest，使 buildFongmiApiBase 生成的
+    // comment 地址指向公网可达的 5757，而非容器内 127.0.0.1。
+    async function proxyOriginalDanmu(req, reply, pathname) {
+        const host = `${req.protocol}://${req.headers.host || '127.0.0.1'}`;
+        const result = await danmuProxy(req.method, pathname, req.query || {}, req.body || null, 60000, host);
+        reply.header('Access-Control-Allow-Origin', '*');
+        for (const [key, value] of Object.entries(result.headers || {})) {
+            if (['content-length', 'transfer-encoding', 'connection'].includes(key.toLowerCase())) continue;
+            try { reply.header(key, value); } catch (e) {}
+        }
+        reply.status(result.status).send(result.body);
+    }
+
+    // /api/v2/* 通配直通（search/anime、search/episodes、fongmi/danmaku、match、bangumi、comment、extcomment、segmentcomment）
+    fastify.route({
+        method: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        url: '/api/v2/*',
+        handler: async (req, reply) => {
+            const pathname = '/api/v2/' + (req.params['*'] || '');
+            return proxyOriginalDanmu(req, reply, pathname);
+        }
+    });
+
+    // /danmaku 直通（原版 FongMi 兼容路径）
+    fastify.route({
+        method: ['GET', 'POST'],
+        url: '/danmaku',
+        handler: async (req, reply) => {
+            return proxyOriginalDanmu(req, reply, '/danmaku');
+        }
+    });
+
     // 管理接口：清除缓存（支持 path 参数）
     fastify.get('/action', async (req, reply) => {
         const { do: action, type, path, name, episode } = req.query;
