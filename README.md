@@ -380,7 +380,7 @@ WebBox 使用：直接引用相同的地址即可，支持跨域
 如果 danmu-api 带有管理界面，可通过 http://你的服务器IP:9321 访问（需在容器中暴露该端口）。
 
 弹幕更新教程
-内置的弹幕服务（danmu-api）是从上游仓库 huangxd-/danmu_api 引入的源码快照，并叠加了一处本地定制（fongmi 弹幕接口支持 format=xml 直接返回 XML，兼容 jar 解析弹幕搜索）。上游发新版后，可通过仓库内脚本一键更新。
+内置的弹幕服务（danmu-api）是从上游仓库 huangxd-/danmu_api 引入的源码快照，并叠加了两处本地定制（fongmi 弹幕接口支持 format=xml 直接返回 XML，兼容 jar 解析弹幕搜索；面板系统配置复用 drpy 的 api_pwd 鉴权）。上游发新版后，可通过仓库内脚本一键更新，脚本会自动重新应用这两处补丁。
 
 更新步骤：
 
@@ -396,8 +396,9 @@ docker restart moli-drpy
 
 - `scripts/update-danmu-api.sh`：克隆上游最新源码 → 同步到 `libs_drpy/danmu_api`（保留本地 `.env` / `config/.env` 配置）→ 应用本地补丁 → 打印版本变化（如 `1.20.3 -> 1.20.7`）。
 - `scripts/patch-danmu-api-fongmi.mjs`：幂等补丁，注入本地定制 `handleFongmiDanmaku`（format=xml 时直接返回最优候选弹幕 XML）。
+- `scripts/patch-danmu-api-panel-auth.mjs`：幂等补丁，恢复面板「系统配置」的 api_pwd 鉴权（前端读取 `?pwd=` 参数、`adminAuthed` 短路与密码输入提示）。
 
-更新后可在管理界面确认版本号。补丁若与上游新代码冲突，脚本会明确报错提示，届时需核对 `danmu_api/worker.js` 中 fongmi 相关路由。
+更新后可在管理界面确认版本号。补丁若与上游新代码冲突，脚本会明确报错提示，届时需核对 `danmu_api/worker.js` 中 fongmi 相关路由，以及 `danmu_api/ui/js/` 下面板鉴权相关逻辑。
 
 超详细部署教程（Docker 一键部署）
 以下教程适合没有任何 Docker 经验的用户，一步一步带你完成部署。
